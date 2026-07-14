@@ -694,6 +694,22 @@
     let cart = JSON.parse(localStorage.getItem('cartModules')) || [];
     let currentUser = null;
 
+    let adminEmails = [];
+
+async function loadAdminEmails() {
+    const snapshot = await db.collection('admins').get();
+    adminEmails = [];
+    snapshot.forEach(doc => adminEmails.push(doc.id));
+}
+
+async function seedAdmin() {
+    // автоматически добавляет metodist@college.ru при первом запуске
+    const docRef = db.collection('admins').doc('metodist@college.ru');
+    const doc = await docRef.get();
+    if (!doc.exists) {
+        await docRef.set({});
+    }
+}
     const cardsContainer = document.getElementById('cards-container');
     const paginationContainer = document.getElementById('pagination-buttons');
     const catalogView = document.getElementById('catalog-view');
@@ -785,7 +801,7 @@
 
     // ---------- АВТОРИЗАЦИЯ ----------
     function isMethodistColledge() {
-        return currentUser === 'metodist@college.ru';
+    return currentUser && adminEmails.includes(currentUser);
     }
 
     function updateAuthUI() {
@@ -1218,6 +1234,8 @@
     (async function startup() {
         await seedInitialModules();
         await loadModulesFromFirestore();
+        await seedAdmin();
+        await loadAdminEmails();
         filteredModules = [...modules];
 
         // Определяем текущего пользователя сразу (если сессия жива)
