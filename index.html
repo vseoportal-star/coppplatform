@@ -623,6 +623,7 @@
             </div>
             <div>
                 <button class="btn-include" id="btn-include">ВКЛЮЧИТЬ МОДУЛЬ В ПРОГРАММУ</button>
+                <button class="btn-include" id="btn-download-detail" style="margin-left: 10px;">Скачать программу (DOCX)</button>
                 <button class="btn-edit-mode" id="btn-edit-mode" style="display: none;">Редактировать модуль</button>
                 <button class="btn-include" id="btn-save-edit" style="display: none;">Сохранить изменения</button>
                 <button class="btn-edit-mode" id="btn-cancel-edit" style="display: none;">Отмена</button>
@@ -695,8 +696,24 @@
     let cart = JSON.parse(localStorage.getItem('cartModules')) || [];
     let currentUser = null;
 
-    let adminEmails = [];
 let professionsList = [];
+let userRoleMap = {}; // { email: 'copp' | 'teacher' }
+
+async function seedUserRoles() {
+    const docRef = db.collection('userRoles').doc('metodist@college.ru');
+    const doc = await docRef.get();
+    if (!doc.exists) {
+        await docRef.set({ role: 'copp' });
+    }
+}
+
+async function loadUserRoles() {
+    const snapshot = await db.collection('userRoles').get();
+    userRoleMap = {};
+    snapshot.forEach(doc => {
+        userRoleMap[doc.id] = doc.data().role;
+    });
+}
 async function seedInitialProfessions() {
     const snapshot = await db.collection('professions').limit(1).get();
     if (snapshot.empty) {
@@ -741,20 +758,6 @@ function updateProfessionDatalist() {
     const datalist = document.getElementById('professions-datalist');
     if (!datalist) return;
     datalist.innerHTML = professionsList.map(p => `<option value="${p}">`).join('');
-}
-async function loadAdminEmails() {
-    const snapshot = await db.collection('admins').get();
-    adminEmails = [];
-    snapshot.forEach(doc => adminEmails.push(doc.id));
-}
-
-async function seedAdmin() {
-    // автоматически добавляет metodist@college.ru при первом запуске
-    const docRef = db.collection('admins').doc('metodist@college.ru');
-    const doc = await docRef.get();
-    if (!doc.exists) {
-        await docRef.set({});
-    }
 }
     const cardsContainer = document.getElementById('cards-container');
     const paginationContainer = document.getElementById('pagination-buttons');
@@ -833,21 +836,29 @@ async function seedAdmin() {
         let html = '<ul class="cart-list">';
         cart.forEach(id => {
             const mod = modules.find(m => m.id === id);
-            if (mod) html += `<li><span>${mod.title}</span> <button class="cart-remove" data-id="${id}">Удалить</button></li>`;
+            html += `<li><span>${mod.title}</span> <button class="cart-remove" data-id="${id}">Удалить</button> <button class="cart-download" data-id="${id}">⬇️</button></li>`;
         });
         html += '</ul>';
         container.innerHTML = html;
         document.querySelectorAll('.cart-remove').forEach(btn => {
-            btn.addEventListener('click', () => removeFromCart(parseInt(btn.dataset.id)));
-        });
+    btn.addEventListener('click', () => removeFromCart(parseInt(btn.dataset.id)));
+});
+document.querySelectorAll('.cart-download').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = parseInt(btn.dataset.id);
+        const mod = modules.find(m => m.id === id);
+        if (mod) downloadModuleDocx(mod);
+    });
+});
     }
 
     function openCartModal() { document.getElementById('cart-modal').classList.add('show'); renderCartModal(); }
     function closeCartModal() { document.getElementById('cart-modal').classList.remove('show'); }
 
     // ---------- АВТОРИЗАЦИЯ ----------
-    function isMethodistColledge() {
-    return currentUser && adminEmails.includes(currentUser);
+    function getCurrentUserRole() {
+    return currentUser ? (userRoleMap[currentUser] || null) : null;
     }
 
     function updateAuthUI() {
@@ -872,14 +883,17 @@ async function seedAdmin() {
     }
 
     function updateCreateButtonVisibility() {
-        const container = document.getElementById('create-module-btn-container');
-        if (!container) return;
-        container.innerHTML = isMethodistColledge()
-            ? '<button class="btn-include" id="create-module-btn">Создать новый модуль</button>'
-            : '';
+    const container = document.getElementById('create-module-btn-container');
+    if (!container) return;
+    const role = getCurrentUserRole();
+    if (role === 'copp' || role === 'teacher') {
+        container.innerHTML = '<button class="btn-include" id="create-module-btn">Создать новый модуль</button>';
         const btn = document.getElementById('create-module-btn');
         if (btn) btn.addEventListener('click', openCreateModuleModal);
+    } else {
+        container.innerHTML = '';
     }
+}
 
     auth.onAuthStateChanged(async (user) => {
         if (user) {
@@ -935,13 +949,12 @@ async function seedAdmin() {
             const priceDisplay = mod.price === 0
                 ? '<span class="card-price free">БЕСПЛАТНО</span>'
                 : `<span class="card-price paid">${mod.price.toLocaleString()} ₽</span>`;
-            const editBtn = isMethodistColledge()
-    ? `<button class="btn-edit" data-id="${mod.id}">Редактировать</button>`
-    : '';
-            const deleteBtn = isMethodistColledge()
-                ? `<button class="btn-delete" data-id="${mod.id}">Удалить</button>`
-                : '';
-            html += `
+                        const role = getCurrentUserRole();
+            const isOwner = (mod.createdBy === currentUser);
+            const canEdit = (role === 'copp') || (role === 'teacher' && isOwner);
+            const editBtn = canEdit ? `<button class="btn-edit" data-id="${mod.id}">Редактировать</button>` : '';
+            const deleteBtn = canEdit ? `<button class="btn-delete" data-id="${mod.id}">Удалить</button>` : '';
+                        html += `
                 <div class="card">
                     <div class="card-title">${mod.title}</div>
                     <div class="card-desc">${mod.desc}</div>
@@ -949,6 +962,7 @@ async function seedAdmin() {
                         ${priceDisplay}
                         <div>
                              <button class="btn-detail" data-id="${mod.id}">ПОДРОБНЕЕ</button>
+                             <button class="btn-download" data-id="${mod.id}" title="Скачать программу">⬇️</button>
     ${editBtn}
     ${deleteBtn}
                         </div>
@@ -975,7 +989,7 @@ async function seedAdmin() {
             });
         });
 
-        document.querySelectorAll('.btn-delete').forEach(btn => {
+                document.querySelectorAll('.btn-delete').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 e.preventDefault();
                 if (confirm('Удалить модуль навсегда?')) {
@@ -983,8 +997,19 @@ async function seedAdmin() {
                 }
             });
         });
-    }
+        document.querySelectorAll('.btn-download').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const id = parseInt(btn.dataset.id);
+                const mod = modules.find(m => m.id === id);
+                if (mod) downloadModuleDocx(mod);
+            });
+        });
+    } // ← закрывающая скобка функции renderCards
 
+        
+    
+        
     function renderPagination() {
         if (!paginationContainer) return;
         const totalPages = Math.ceil(filteredModules.length / cardsPerPage);
@@ -1065,10 +1090,14 @@ async function seedAdmin() {
         moduleDetail.classList.add('active');
         document.getElementById('detail-view').style.display = 'block';
         document.getElementById('edit-form-container').style.display = 'none';
-        document.getElementById('btn-edit-mode').style.display = isMethodistColledge() ? 'inline-block' : 'none';
+        const role = getCurrentUserRole();
+const isOwner = (mod.createdBy === currentUser);
+const canEdit = (role === 'copp') || (role === 'teacher' && isOwner);
+document.getElementById('btn-edit-mode').style.display = canEdit ? 'inline-block' : 'none';
         document.getElementById('btn-save-edit').style.display = 'none';
         document.getElementById('btn-cancel-edit').style.display = 'none';
         document.getElementById('btn-include').style.display = 'inline-block';
+        
 
         document.getElementById('module-meta').innerHTML = `
             <p><strong>Профессии:</strong> ${mod.profession}</p>
@@ -1094,6 +1123,7 @@ async function seedAdmin() {
 
         document.getElementById('btn-include').onclick = () => addToCart(mod.id);
         document.getElementById('btn-edit-mode').onclick = () => enterEditMode(mod);
+                document.getElementById('btn-download-detail').onclick = () => downloadModuleDocx(mod);
     }
 
     function buildSelectOptions(options, selectedValue) {
@@ -1217,9 +1247,9 @@ async function seedAdmin() {
                 <label>Знания (через запятую)</label><input type="text" id="new-know">
                 <label>Умения (через запятую)</label><input type="text" id="new-skills">
                 <div class="form-actions">
-                    <button class="btn-include" id="save-new-module">Создать</button>
-                    <button class="btn-edit-mode" id="cancel-new-module">Отмена</button>
-                </div>
+    <button class="btn-include" id="save-new-module">Создать</button>
+    <button class="btn-edit-mode" id="cancel-new-module">Отмена</button>
+</div>
             </div>`;
         document.getElementById('save-new-module').addEventListener('click', createNewModule);
         document.getElementById('cancel-new-module').addEventListener('click', closeCreateModuleModal);
@@ -1237,6 +1267,7 @@ async function seedAdmin() {
         const newModule = {
             id: newId,
             title,
+            createdBy: currentUser,
             desc: document.getElementById('new-desc').value,
             price: parseInt(document.getElementById('new-price').value) || 0,
             profession: document.getElementById('new-profession').value,
@@ -1268,7 +1299,19 @@ async function seedAdmin() {
         renderPagination();
         alert('Модуль создан');
     }
-
+function downloadModuleDocx(mod) {
+    // Заглушка – текстовый файл, который Word откроет как .docx
+    const content = `Программа модуля: ${mod.title}\n\nПрофессия: ${mod.profession}\nОписание: ${mod.desc}\n\n(Содержимое будет заменено на реальный документ)`;
+    const blob = new Blob([content], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${mod.title.replace(/[^a-zа-яё0-9]/gi, '_')}.docx`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
     function initAccessibility() {
         const isActive = localStorage.getItem('accessibilityMode') === 'true';
         if (isActive) document.body.classList.add('accessibility-mode');
@@ -1282,8 +1325,8 @@ async function seedAdmin() {
     (async function startup() {
         await seedInitialModules();
         await loadModulesFromFirestore();
-        await seedAdmin();
-        await loadAdminEmails();
+                await seedUserRoles();
+        await loadUserRoles();
           await seedInitialProfessions();
         await loadProfessions();
         filteredModules = [...modules];
