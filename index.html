@@ -1,0 +1,1371 @@
+<!DOCTYPE html>
+<html lang="ru">
+    <!-- Firebase (CDN) -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+<script>
+  // Твой конфиг (уже без import'ов)
+  const firebaseConfig = {
+    apiKey: "AIzaSyChcOmevEdVtQWtlF_sOuvi6tMhUxqyNSA",
+    authDomain: "platform-copp.firebaseapp.com",
+    projectId: "platform-copp",
+    storageBucket: "platform-copp.firebasestorage.app",
+    messagingSenderId: "43877018929",
+    appId: "1:43877018929:web:c4aec44921c85d23211410",
+    measurementId: "G-BPX89K3PD6"
+  };
+
+  // Инициализация Firebase
+  firebase.initializeApp(firebaseConfig);
+
+  // Сокращения для удобства
+  const auth = firebase.auth();
+  const db = firebase.firestore();
+</script>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ЦОПП — Система подбора образовательных программ</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background-color: #f5f5f5;
+            min-height: 100vh;
+            color: #333;
+            transition: zoom 0.2s, filter 0.2s;
+        }
+        body.accessibility-mode {
+            zoom: 1.2;
+            filter: contrast(1.2);
+        }
+        .header {
+            background-color: #1E4082;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 40px;
+            height: 72px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        .logo {
+            width: 260px;
+            flex-shrink: 0;
+            font-size: 15px;
+            font-weight: 500;
+            line-height: 1.2;
+            letter-spacing: 0.3px;
+        }
+        .main-title {
+            flex-grow: 1;
+            text-align: center;
+            font-size: 20px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            padding: 0 20px;
+        }
+        .right-block {
+            width: 260px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 20px;
+        }
+        .cart-icon-wrapper {
+            position: relative;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+        }
+        .cart-icon {
+            width: 28px;
+            height: 28px;
+            stroke: #ffffff;
+            fill: none;
+            transition: opacity 0.2s;
+        }
+        .cart-icon:hover {
+            opacity: 0.8;
+        }
+        .cart-badge {
+            position: absolute;
+            top: -6px;
+            right: -10px;
+            background: #f07d00;
+            color: white;
+            font-size: 11px;
+            font-weight: bold;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        .cart-badge.show {
+            display: flex;
+        }
+        .glasses-icon {
+            width: 28px;
+            height: 28px;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .glasses-icon:hover {
+            opacity: 0.8;
+        }
+        .btn {
+            background: transparent;
+            border: 1.5px solid #ffffff;
+            color: #ffffff;
+            padding: 8px 20px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .btn:hover {
+            background-color: rgba(255,255,255,0.15);
+        }
+        .btn-filled {
+            background-color: #ffffff;
+            color: #1E4082;
+            border: 1.5px solid #ffffff;
+        }
+        .btn-filled:hover {
+            background-color: #f0f0f0;
+            border-color: #f0f0f0;
+        }
+        .sub-header {
+            background-color: #ffffff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 48px;
+        }
+        .sub-nav {
+            display: flex;
+            align-items: center;
+            list-style: none;
+        }
+        .sub-nav li+li::before {
+            content: "|";
+            color: #1E4082;
+            margin: 0 20px;
+            opacity: 0.4;
+            font-size: 16px;
+        }
+        .sub-nav a {
+            color: #1E4082;
+            text-decoration: none;
+            font-size: 15px;
+            font-weight: 500;
+            padding: 8px 6px;
+            border-radius: 4px;
+            transition: background-color 0.2s, color 0.2s;
+        }
+        .sub-nav a:hover {
+            background-color: rgba(30,64,130,0.08);
+            color: #0d2b5e;
+        }
+        .container {
+            display: flex;
+            padding: 0 40px;
+            margin-top: 20px;
+            align-items: flex-start;
+        }
+        .sidebar {
+            width: 28%;
+            flex-shrink: 0;
+            background: #fff;
+            border-radius: 6px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+            overflow: hidden;
+            margin-right: 20px;
+        }
+        .sidebar-title {
+            background-color: #1E4082;
+            color: #fff;
+            font-weight: 600;
+            font-size: 16px;
+            text-align: center;
+            padding: 12px 10px;
+            letter-spacing: 0.5px;
+        }
+        .sidebar-filters {
+            padding: 20px;
+        }
+        .filter-group {
+            margin-bottom: 14px;
+        }
+        .filter-group label {
+            display: block;
+            font-size: 12px;
+            margin-bottom: 3px;
+            font-weight: 500;
+            color: #333;
+            line-height: 1.3;
+        }
+        .filter-group select,
+        .filter-group input[type="number"] {
+            width: 100%;
+            padding: 7px 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 13px;
+            background-color: #fafafa;
+        }
+        .cost-range,
+        .hours-range {
+            display: flex;
+            gap: 6px;
+        }
+        .cost-range input,
+        .hours-range input {
+            width: 100%;
+        }
+        .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px 12px;
+            margin-top: 4px;
+        }
+        .checkbox-group label {
+            font-size: 12px;
+            font-weight: 400;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+        }
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+            margin: 0;
+        }
+        .map-placeholder {
+            background: #e9e9e9;
+            border: 1px dashed #aaa;
+            border-radius: 6px;
+            height: 120px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #777;
+            font-size: 12px;
+            text-align: center;
+            padding: 10px;
+            margin-top: 5px;
+        }
+        .map-placeholder .icon {
+            font-size: 28px;
+            margin-bottom: 6px;
+            opacity: 0.5;
+        }
+        .btn-find {
+            width: 100%;
+            padding: 10px;
+            background-color: #1E4082;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: background-color 0.2s;
+        }
+        .btn-find:hover {
+            background-color: #15315f;
+        }
+        .main-content {
+            flex: 1;
+            background: #fff;
+            border-radius: 6px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+            padding: 20px;
+        }
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+        .card {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            background: #fff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            transition: box-shadow 0.2s;
+            display: flex;
+            flex-direction: column;
+            min-height: 180px;
+            justify-content: space-between;
+        }
+        .card:hover {
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+        .card-title {
+            font-weight: 600;
+            font-size: 16px;
+            margin-bottom: 6px;
+            color: #1E4082;
+        }
+        .card-desc {
+            font-size: 13px;
+            color: #666;
+            flex-grow: 1;
+            margin-bottom: 12px;
+        }
+        .card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .card-price {
+            font-weight: 600;
+            font-size: 14px;
+            padding: 4px 10px;
+            border-radius: 4px;
+            background: #f0f0f0;
+            color: #333;
+            white-space: nowrap;
+        }
+        .card-price.free {
+            background: #e8f5e9;
+            color: #2E7D32;
+        }
+        .card-price.paid {
+            background: #e3f2fd;
+            color: #1565C0;
+        }
+        .btn-detail {
+            background: #1E4082;
+            color: #fff;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background-color 0.2s;
+        }
+        .btn-detail:hover {
+            background-color: #15315f;
+        }
+        .btn-edit {
+            background: #f07d00;
+            color: #fff;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            margin-left: 5px;
+            transition: background-color 0.2s;
+        }
+        .btn-edit:hover {
+            background-color: #d06e00;
+        }
+                .btn-delete {
+            background: #c62828;
+            color: #fff;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            margin-left: 5px;
+            transition: background-color 0.2s;
+        }
+        .btn-delete:hover {
+            background-color: #a10d0d;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            margin-top: 25px;
+        }
+        .pages {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .pages button {
+            background: #fff;
+            border: 1px solid #ccc;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            color: #333;
+            min-width: 32px;
+            text-align: center;
+            transition: all 0.1s;
+        }
+        .pages button.active {
+            background: #1E4082;
+            color: #fff;
+            border-color: #1E4082;
+        }
+        .pages button:hover:not(.active) {
+            background: #f0f0f0;
+        }
+        .pages button:disabled {
+            opacity: 0.5;
+            cursor: default;
+            background: #f0f0f0;
+        }
+
+        /* Детальная страница модуля */
+        .module-detail {
+            display: none;
+            padding: 20px 40px;
+        }
+        .module-detail.active {
+            display: block;
+        }
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #1E4082;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .module-header {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: flex-start;
+            gap: 20px;
+        }
+        .module-meta {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            max-width: 500px;
+            flex: 2;
+        }
+        .module-meta p {
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        .module-stats {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .stat-card {
+            background: #f0f4ff;
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: 600;
+            color: #1E4082;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #555;
+            margin-top: 4px;
+        }
+        .btn-include {
+            background: #1E4082;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            display: inline-block;
+            margin-top: 15px;
+        }
+        .btn-include:hover {
+            background-color: #15315f;
+        }
+        .btn-edit-mode {
+            background: #f07d00;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: background-color 0.2s;
+        }
+        .btn-edit-mode:hover {
+            background-color: #d06e00;
+        }
+        .module-info {
+            display: flex;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .module-info .left {
+            flex: 2;
+        }
+        .module-info .right {
+            flex: 1;
+        }
+        .three-cols {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .col h3 {
+            margin-bottom: 10px;
+            color: #1E4082;
+        }
+        .col ul {
+            padding-left: 18px;
+            font-size: 14px;
+        }
+
+        /* Модальные окна */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal.show {
+            display: flex;
+        }
+        .modal-content {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+        }
+        .close {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 28px;
+            font-weight: bold;
+            color: #aaa;
+            cursor: pointer;
+        }
+        .close:hover {
+            color: #000;
+        }
+        .login-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .login-btn {
+            padding: 12px;
+            background: #1E4082;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .login-btn:hover {
+            background-color: #15315f;
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: white;
+            font-weight: 500;
+        }
+        .logout-btn {
+            background: transparent;
+            border: 1px solid white;
+            color: white;
+            padding: 6px 14px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .logout-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        .edit-form {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 15px;
+        }
+        .edit-form label {
+            font-weight: 500;
+            font-size: 14px;
+        }
+        .edit-form input,
+        .edit-form select,
+        .edit-form textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">Центр<br>опережающей<br>профессиональной<br>подготовки</div>
+        <div class="main-title">Система подбора и комплектации образовательных программ</div>
+        <div class="right-block" id="right-block">
+            <div class="cart-icon-wrapper" id="cart-icon-wrapper">
+                <svg class="cart-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle>
+                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                </svg>
+                <span class="cart-badge" id="cart-badge">0</span>
+            </div>
+            <svg class="glasses-icon" id="glasses-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <title>Версия для слабовидящих</title>
+                <circle cx="6" cy="12" r="4"></circle><circle cx="18" cy="12" r="4"></circle>
+                <path d="M2 12h2"/><path d="M20 12h2"/><path d="M10 12h4"/>
+            </svg>
+            <div id="auth-buttons">
+                <button class="btn" id="login-btn">Вход</button>
+                <button class="btn btn-filled" id="register-btn">Регистрация</button>
+            </div>
+            <div id="user-block" style="display: none;" class="user-info">
+                <span id="username-display"></span>
+                <button class="logout-btn" id="logout-btn">Выйти</button>
+            </div>
+        </div>
+    </header>
+    <nav class="sub-header">
+        <ul class="sub-nav">
+            <li><a href="#" id="home-link">Главная</a></li>
+            <li><a href="https://cp.copp55.ru">Цифровая платформа</a></li>
+            <li><a href="https://copp55.ru">Сайт ЦОПП</a></li>
+        </ul>
+    </nav>
+
+    <!-- Каталог модулей -->
+    <div id="catalog-view">
+        <div class="container">
+            <aside class="sidebar">
+                <div class="sidebar-title">ПОИСК МОДУЛЕЙ</div>
+                <div class="sidebar-filters">
+                    <div class="filter-group"><label>Наименование модуля</label><select id="filter-name"><option value="">Все</option><option>Основы программирования на Python</option><option>Электромонтаж и наладка оборудования</option><option>Поварское дело</option><option>Web-дизайн и разработка</option><option>Сварочные технологии</option><option>Медицинский массаж</option><option>Бухгалтерский учёт и налогообложение</option><option>Ландшафтный дизайн</option><option>Ремонт и обслуживание автомобилей</option><option>IT-безопасность</option><option>Графический дизайн</option><option>Строительство и отделка</option><option>Технологии молочного производства</option><option>Туризм и гостиничное дело</option><option>Фармацевтика</option><option>Документационное обеспечение управления</option><option>3D-моделирование</option><option>Маркетинг и реклама</option><option>Педагогика дополнительного образования</option><option>Английский язык для профессиональной деятельности</option></select></div>
+                    <div class="filter-group"><label>Вид образования</label><select id="filter-edu-type"><option value="">Любой</option><option>ДПО</option><option>ПО</option></select></div>
+                    <div class="filter-group"><label>К какому типу программы относится модуль</label><select id="filter-program-type"><option value="">Все</option><option>Профессиональная подготовка</option><option>Повышение квалификации</option><option>Профессиональная переподготовка</option></select></div>
+                    <div class="filter-group"><label>Отрасль</label><select id="filter-industry"><option value="">Все</option><option>Нефтехимия</option><option>Машиностроение</option><option>Агропромышленный комплекс</option><option>Производство пищевых продуктов</option><option>Строительство</option><option>Сфера услуг</option><option>Туризм</option><option>Здравоохранение</option><option>Образование</option><option>Информационные технологии</option><option>Творчество и дизайн</option></select></div>
+                    <div class="filter-group"><label>К какой профессии относится модуль</label><select id="filter-profession"><option value="">Все</option><option>Программист</option><option>Электромонтажник</option><option>Повар</option><option>Web-дизайнер</option><option>Сварщик</option><option>Медицинская сестра</option><option>Бухгалтер</option><option>Ландшафтный архитектор</option><option>Автомеханик</option><option>Специалист по кибербезопасности</option><option>Графический дизайнер</option><option>Строитель-отделочник</option><option>Технолог пищевой промышленности</option><option>Менеджер по туризму</option><option>Фармацевт</option><option>Делопроизводитель</option><option>3D-моделлер</option><option>Маркетолог</option><option>Педагог доп. образования</option><option>Переводчик</option></select></div>
+                    <div class="filter-group"><label>Форма обучения</label><select id="filter-form"><option value="">Все</option><option>Очно</option><option>Очно-заочно</option><option>Заочно</option></select></div>
+                    <div class="filter-group"><label>Возможность применения ДОТ</label><select id="filter-dot"><option value="">Любое</option><option>Да</option><option>Нет</option></select></div>
+                    <div class="filter-group"><label>Адаптация для людей с ОВЗ</label><select id="filter-ovz"><option value="">Любое</option><option>Да</option><option>Нет</option></select></div>
+                    <div class="filter-group"><label>Платное или бесплатное обучение</label><select id="payment-type"><option value="any">Любое</option><option value="paid">Платное</option><option value="free">Бесплатное</option></select></div>
+                    <div class="filter-group"><label>Предварительная стоимость (₽)</label><div class="cost-range"><input type="number" id="cost-from" placeholder="от"><input type="number" id="cost-to" placeholder="до"></div></div>
+                    <div class="filter-group"><label>Объем обучения (часы)</label><div class="hours-range"><input type="number" id="hours-from" placeholder="от"><input type="number" id="hours-to" placeholder="до"></div></div>
+                    <div class="filter-group"><label>Место обучения</label><div class="map-placeholder"><span class="icon">🗺️</span><span>Карта выбора района обучения временно недоступна</span></div></div>
+                    <div class="filter-group"><label>Возможность обучения на базе заказчика</label><select id="filter-onsite"><option value="">Любое</option><option>Да</option><option>Нет</option></select></div>
+                    <div class="filter-group"><label>Требования к имеющемуся образованию</label><div class="checkbox-group" id="edu-checkboxes"><label><input type="checkbox" value="basic"> Основное общее</label><label><input type="checkbox" value="secondary"> Среднее общее</label><label><input type="checkbox" value="vocational"> Среднее профессиональное</label><label><input type="checkbox" value="incomplete_higher"> Неоконченное высшее</label><label><input type="checkbox" value="bachelor"> Высшее (бакалавриат)</label><label><input type="checkbox" value="master"> Высшее (магистратура)</label><label><input type="checkbox" value="specialist"> Высшее (специалитет)</label><label><input type="checkbox" value="dpo"> Дополнительное профессиональное</label><label><input type="checkbox" value="degree"> Ученая степень</label><label><input type="checkbox" value="any"> Не имеет значения</label></div></div>
+                    <button class="btn-find" id="btn-find">НАЙТИ</button>
+                </div>
+            </aside>
+            <main class="main-content">
+                <div id="create-module-btn-container" style="margin-bottom: 15px; text-align: right;"></div>
+                <div class="cards-grid" id="cards-container"></div>
+                <div class="pagination"><div class="pages" id="pagination-buttons"></div></div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Детальная страница модуля -->
+    <div id="module-detail" class="module-detail">
+        <span class="back-link" id="back-to-catalog">← Назад к каталогу</span>
+        <div class="module-header">
+            <div class="module-meta" id="module-meta"></div>
+            <div class="module-stats">
+                <div class="stat-card"><div class="stat-value" id="module-duration"></div><div class="stat-label">Продолжительность</div></div>
+                <div class="stat-card"><div class="stat-value" id="module-lectures"></div><div class="stat-label">Лекций</div></div>
+                <div class="stat-card"><div class="stat-value" id="module-practices"></div><div class="stat-label">Практических занятий</div></div>
+            </div>
+        </div>
+        <div>
+            <button class="btn-include" id="btn-include">ВКЛЮЧИТЬ МОДУЛЬ В ПРОГРАММУ</button>
+            <button class="btn-edit-mode" id="btn-edit-mode" style="display: none;">Редактировать модуль</button>
+            <button class="btn-include" id="btn-save-edit" style="display: none;">Сохранить изменения</button>
+            <button class="btn-edit-mode" id="btn-cancel-edit" style="display: none;">Отмена</button>
+        </div>
+        <div class="module-info">
+            <div class="left">
+                <h2 id="module-name"></h2>
+                <p id="module-theory"></p>
+            </div>
+            <div class="right"></div>
+        </div>
+        <div id="detail-view">
+            <div class="three-cols">
+                <div class="col"><h3>Темы</h3><ul id="module-topics"></ul></div>
+                <div class="col"><h3>Что будете знать</h3><ul id="module-know"></ul></div>
+                <div class="col"><h3>Что будете уметь</h3><ul id="module-skills"></ul></div>
+            </div>
+        </div>
+        <div id="edit-form-container" style="display: none;"></div>
+    </div>
+
+    <!-- Модальное окно входа / регистрации -->
+       <!-- Модальное окно входа / регистрации -->
+    <div id="login-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" id="close-login">&times;</span>
+            <h2>Вход / Регистрация</h2>
+            <form id="auth-form" style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">
+                <input type="email" id="auth-email" placeholder="Email" required style="padding: 10px;">
+                <input type="password" id="auth-password" placeholder="Пароль (минимум 6 символов)" required style="padding: 10px;">
+                <button type="submit" class="login-btn">Войти</button>
+                <button type="button" id="auth-register-btn" class="login-btn" style="background: #f07d00;">Зарегистрироваться</button>
+            </form>
+            <div id="auth-error" style="color: red; margin-top: 10px;"></div>
+        </div>
+    </div>
+
+    <!-- Модальное окно корзины -->
+    <div id="cart-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" id="close-cart">&times;</span>
+            <h2>Корзина модулей</h2>
+            <div id="cart-items-container"></div>
+        </div>
+    </div>
+
+    <!-- Модальное окно создания модуля -->
+    <div id="create-module-modal" class="modal">
+        <div class="modal-content" style="max-width: 700px;">
+            <span class="close" id="close-create-module">&times;</span>
+            <h2>Создание нового модуля</h2>
+            <div id="create-module-form"></div>
+        </div>
+    </div>
+
+    <script>
+    // ---------- ИНИЦИАЛИЗАЦИЯ ----------
+    const initialModules = [
+        { id: 0, title: "Основы программирования на Python", desc: "Курс для начинающих, 40 часов, сертификат.", price: 12000, profession: "Программист", competencies: "Разработка программного обеспечения", categories: "Студенты, Взрослые", form: "Очно-заочно", ovz: "Нет", free: false, duration: "40 часов", lectures: 20, practices: 20, hours: 40, theoretical: "Изучение синтаксиса Python, основных библиотек и написание простых скриптов.", topics: ["Введение в Python", "Управляющие конструкции", "Функции и модули", "Работа с файлами"], know: ["Основы синтаксиса Python", "Типы данных", "Принципы ООП"], skills: ["Писать простые программы", "Работать с библиотеками", "Отлаживать код"], eduType: "ДПО", programType: "Повышение квалификации", industry: "Информационные технологии", dot: "Да", onsite: "Нет", eduRequirements: ["secondary"] },
+        { id: 1, title: "Электромонтаж и наладка оборудования", desc: "Практический курс, 72 часа.", price: 8500, profession: "Электромонтажник", competencies: "Электромонтажные работы", categories: "Взрослые, Безработные", form: "Очно", ovz: "Да", free: false, duration: "72 часа", lectures: 12, practices: 60, hours: 72, theoretical: "Монтаж электрооборудования, чтение схем, техника безопасности.", topics: ["Основы электротехники", "Монтаж проводки", "Наладка щитов"], know: ["Правила устройства электроустановок", "Типы кабелей"], skills: ["Выполнять монтаж", "Проводить диагностику"], eduType: "ПО", programType: "Профессиональная подготовка", industry: "Строительство", dot: "Нет", onsite: "Да", eduRequirements: ["vocational"] },
+        { id: 2, title: "Поварское дело", desc: "Обучение профессиональному поварскому мастерству.", price: 0, profession: "Повар", competencies: "Поварское искусство", categories: "Лица старше 50, Безработные", form: "Очно", ovz: "Да", free: true, duration: "48 часов", lectures: 10, practices: 38, hours: 48, theoretical: "Технологии приготовления блюд, санитария.", topics: ["Горячие блюда", "Соусы", "Десерты"], know: ["Рецептуры", "Нормы СанПиН"], skills: ["Готовить блюда", "Работать с оборудованием"], eduType: "ПО", programType: "Профессиональная подготовка", industry: "Производство пищевых продуктов", dot: "Нет", onsite: "Да", eduRequirements: ["basic"] },
+        { id: 3, title: "Web-дизайн и разработка", desc: "Современные технологии, 60 часов.", price: 15000, profession: "Web-дизайнер", competencies: "Дизайн интерфейсов", categories: "Студенты, Самозанятые", form: "Очно-заочно", ovz: "Нет", free: false, duration: "60 часов", lectures: 24, practices: 36, hours: 60, theoretical: "HTML, CSS, JavaScript, Figma.", topics: ["Верстка", "Адаптивный дизайн", "Основы UX"], know: ["Семантика HTML5", "Flexbox"], skills: ["Создавать сайты", "Прототипировать"], eduType: "ДПО", programType: "Повышение квалификации", industry: "Информационные технологии", dot: "Да", onsite: "Нет", eduRequirements: ["secondary"] },
+        { id: 4, title: "Сварочные технологии", desc: "Ручная дуговая сварка, 48 часов.", price: 9200, profession: "Сварщик", competencies: "Сварочное производство", categories: "Взрослые, ИП", form: "Очно", ovz: "Нет", free: false, duration: "48 часов", lectures: 8, practices: 40, hours: 48, theoretical: "Технология ручной дуговой сварки.", topics: ["Оборудование", "Техника безопасности", "Швы"], know: ["Типы электродов", "Режимы сварки"], skills: ["Варить стыковые швы", "Зачищать"], eduType: "ПО", programType: "Профессиональная подготовка", industry: "Машиностроение", dot: "Нет", onsite: "Да", eduRequirements: ["vocational"] },
+        { id: 5, title: "Медицинский массаж", desc: "Классический и лечебный массаж, 120 часов.", price: 22000, profession: "Медицинская сестра", competencies: "Медицинский массаж", categories: "Взрослые, Иные", form: "Очно", ovz: "Да", free: false, duration: "120 часов", lectures: 30, practices: 90, hours: 120, theoretical: "Анатомия, физиология, техники массажа.", topics: ["Классический массаж", "Лечебный"], know: ["Мышечные группы", "Показания"], skills: ["Выполнять массаж", "Оценивать состояние"], eduType: "ДПО", programType: "Профессиональная переподготовка", industry: "Здравоохранение", dot: "Нет", onsite: "Да", eduRequirements: ["bachelor"] },
+        { id: 6, title: "Бухгалтерский учёт и налогообложение", desc: "1С:Бухгалтерия, налоги, 36 часов.", price: 7500, profession: "Бухгалтер", competencies: "Бухгалтерский учёт", categories: "Студенты, Взрослые", form: "Заочно", ovz: "Нет", free: false, duration: "36 часов", lectures: 18, practices: 18, hours: 36, theoretical: "Основы бухучёта, 1С.", topics: ["План счетов", "Налоги", "Отчётность"], know: ["Законодательство", "Проводки"], skills: ["Вести учёт в 1С", "Составлять баланс"], eduType: "ДПО", programType: "Повышение квалификации", industry: "Сфера услуг", dot: "Да", onsite: "Нет", eduRequirements: ["bachelor"] },
+        { id: 7, title: "Ландшафтный дизайн", desc: "Проектирование садов и парков, 54 часа.", price: 11000, profession: "Ландшафтный архитектор", competencies: "Ландшафтное проектирование", categories: "Самозанятые, ИП", form: "Очно-заочно", ovz: "Нет", free: false, duration: "54 часа", lectures: 20, practices: 34, hours: 54, theoretical: "Основы композиции, дендрология.", topics: ["Стили садов", "Растения", "Проект"], know: ["Виды растений", "Дренаж"], skills: ["Создавать проект", "Подбирать растения"], eduType: "ДПО", programType: "Повышение квалификации", industry: "Творчество и дизайн", dot: "Да", onsite: "Нет", eduRequirements: ["secondary"] },
+        { id: 8, title: "Ремонт и обслуживание автомобилей", desc: "Диагностика и ремонт, 80 часов.", price: 6800, profession: "Автомеханик", competencies: "Ремонт автомобилей", categories: "Взрослые, Безработные", form: "Очно", ovz: "Нет", free: false, duration: "80 часов", lectures: 10, practices: 70, hours: 80, theoretical: "Устройство ДВС, ходовой.", topics: ["Двигатель", "Трансмиссия"], know: ["Диагностика", "Инструмент"], skills: ["Ремонтировать", "Проводить ТО"], eduType: "ПО", programType: "Профессиональная подготовка", industry: "Машиностроение", dot: "Нет", onsite: "Да", eduRequirements: ["vocational"] },
+        { id: 9, title: "IT-безопасность", desc: "Кибербезопасность и защита данных, 64 часа.", price: 18000, profession: "Специалист по кибербезопасности", competencies: "Защита информации", categories: "Студенты, ИП", form: "Очно-заочно", ovz: "Нет", free: false, duration: "64 часа", lectures: 32, practices: 32, hours: 64, theoretical: "Сетевые атаки, криптография.", topics: ["Файерволы", "Шифрование"], know: ["Виды угроз", "Политики безопасности"], skills: ["Настраивать защиту", "Анализировать инциденты"], eduType: "ДПО", programType: "Повышение квалификации", industry: "Информационные технологии", dot: "Да", onsite: "Нет", eduRequirements: ["bachelor"] },
+        { id: 10, title: "Графический дизайн", desc: "Adobe Photoshop и Illustrator, 48 часов.", price: 10500, profession: "Графический дизайнер", competencies: "Графический дизайн", categories: "Студенты, Самозанятые", form: "Очно", ovz: "Нет", free: false, duration: "48 часов", lectures: 16, practices: 32, hours: 48, theoretical: "Композиция, работа с цветом.", topics: ["Photoshop", "Illustrator"], know: ["Инструменты", "Тренды"], skills: ["Рисовать", "Верстать макеты"], eduType: "ДПО", programType: "Повышение квалификации", industry: "Творчество и дизайн", dot: "Да", onsite: "Нет", eduRequirements: ["secondary"] },
+        { id: 11, title: "Строительство и отделка", desc: "Технологии внутренней отделки, 56 часов.", price: 7800, profession: "Строитель-отделочник", competencies: "Отделочные работы", categories: "Безработные, Иные", form: "Очно", ovz: "Да", free: false, duration: "56 часов", lectures: 12, practices: 44, hours: 56, theoretical: "Штукатурка, плитка.", topics: ["Штукатурка", "Плитка"], know: ["Материалы", "Инструмент"], skills: ["Штукатурить", "Класть плитку"], eduType: "ПО", programType: "Профессиональная подготовка", industry: "Строительство", dot: "Нет", onsite: "Да", eduRequirements: ["basic"] },
+        { id: 12, title: "Технологии молочного производства", desc: "Современное оборудование, 40 часов.", price: 0, profession: "Технолог пищевой промышленности", competencies: "Молочное производство", categories: "Взрослые, Безработные", form: "Очно", ovz: "Да", free: true, duration: "40 часов", lectures: 20, practices: 20, hours: 40, theoretical: "Технология сыра, масла.", topics: ["Сыроделие", "Маслоделие"], know: ["Рецептуры", "Оборудование"], skills: ["Варить сыр", "Контролировать качество"], eduType: "ПО", programType: "Профессиональная подготовка", industry: "Производство пищевых продуктов", dot: "Нет", onsite: "Да", eduRequirements: ["basic"] },
+        { id: 13, title: "Туризм и гостиничное дело", desc: "Менеджмент в туризме, 50 часов.", price: 9000, profession: "Менеджер по туризму", competencies: "Туристический менеджмент", categories: "Студенты, ИП", form: "Заочно", ovz: "Нет", free: false, duration: "50 часов", lectures: 25, practices: 25, hours: 50, theoretical: "Маркетинг, бронирование.", topics: ["Гостиницы", "Туры"], know: ["Системы бронирования"], skills: ["Составлять туры"], eduType: "ДПО", programType: "Повышение квалификации", industry: "Туризм", dot: "Да", onsite: "Нет", eduRequirements: ["bachelor"] },
+        { id: 14, title: "Фармацевтика", desc: "Основы фармакологии и отпуск лекарств, 100 часов.", price: 25000, profession: "Фармацевт", competencies: "Фармацевтическая деятельность", categories: "Взрослые, Иные", form: "Очно", ovz: "Да", free: false, duration: "100 часов", lectures: 40, practices: 60, hours: 100, theoretical: "Лекарственные средства, рецептура.", topics: ["Фармакология", "Отпуск"], know: ["Препараты", "Дозировки"], skills: ["Консультировать", "Отпускать"], eduType: "ДПО", programType: "Профессиональная переподготовка", industry: "Здравоохранение", dot: "Нет", onsite: "Да", eduRequirements: ["master", "specialist"] },
+        { id: 15, title: "Документационное обеспечение управления", desc: "Делопроизводство и архивное дело, 32 часа.", price: 0, profession: "Делопроизводитель", competencies: "Документооборот", categories: "Взрослые, Безработные", form: "Заочно", ovz: "Да", free: true, duration: "32 часа", lectures: 16, practices: 16, hours: 32, theoretical: "ГОСТ Р 7.0.97-2016.", topics: ["Оформление", "Архив"], know: ["Правила", "Стандарты"], skills: ["Составлять документы"], eduType: "ДПО", programType: "Повышение квалификации", industry: "Сфера услуг", dot: "Да", onsite: "Нет", eduRequirements: ["secondary"] },
+        { id: 16, title: "3D-моделирование", desc: "Blender и 3Ds Max, 68 часов.", price: 16000, profession: "3D-моделлер", competencies: "3D-графика", categories: "Студенты, Самозанятые", form: "Очно-заочно", ovz: "Нет", free: false, duration: "68 часов", lectures: 20, practices: 48, hours: 68, theoretical: "Полигональное моделирование.", topics: ["Blender", "Max"], know: ["Топология", "Текстуры"], skills: ["Моделировать", "Анимировать"], eduType: "ДПО", programType: "Повышение квалификации", industry: "Творчество и дизайн", dot: "Да", onsite: "Нет", eduRequirements: ["secondary"] },
+        { id: 17, title: "Маркетинг и реклама", desc: "Digital-маркетинг, 44 часа.", price: 8200, profession: "Маркетолог", competencies: "Маркетинговые коммуникации", categories: "Студенты, ИП", form: "Очно-заочно", ovz: "Нет", free: false, duration: "44 часа", lectures: 22, practices: 22, hours: 44, theoretical: "SMM, контекст.", topics: ["Таргет", "SEO"], know: ["Инструменты"], skills: ["Настраивать рекламу"], eduType: "ДПО", programType: "Повышение квалификации", industry: "Сфера услуг", dot: "Да", onsite: "Нет", eduRequirements: ["bachelor"] },
+        { id: 18, title: "Педагогика дополнительного образования", desc: "Методика преподавания, 36 часов.", price: 0, profession: "Педагог доп. образования", competencies: "Образовательные методики", categories: "Взрослые, Иные", form: "Заочно", ovz: "Да", free: true, duration: "36 часов", lectures: 18, practices: 18, hours: 36, theoretical: "Педагогика, психология.", topics: ["Методики", "Планирование"], know: ["ФГОС", "Возрастные особенности"], skills: ["Разрабатывать программы"], eduType: "ДПО", programType: "Профессиональная переподготовка", industry: "Образование", dot: "Да", onsite: "Нет", eduRequirements: ["bachelor"] },
+        { id: 19, title: "Английский язык для профессиональной деятельности", desc: "Технический перевод, 48 часов.", price: 5500, profession: "Переводчик", competencies: "Профессиональный английский", categories: "Студенты, Взрослые", form: "Очно-заочно", ovz: "Нет", free: false, duration: "48 часов", lectures: 30, practices: 18, hours: 48, theoretical: "Специализированная лексика.", topics: ["Деловая переписка", "Перевод"], know: ["Терминология", "Грамматика"], skills: ["Переводить тексты", "Вести переговоры"], eduType: "ДПО", programType: "Повышение квалификации", industry: "Образование", dot: "Да", onsite: "Нет", eduRequirements: ["secondary"] }
+    ];
+
+    let modules = [];
+    let filteredModules = [];
+    const cardsPerPage = 9;
+    let currentPage = 1;
+    let cart = JSON.parse(localStorage.getItem('cartModules')) || [];
+    let currentUser = null;
+
+    const cardsContainer = document.getElementById('cards-container');
+    const paginationContainer = document.getElementById('pagination-buttons');
+    const catalogView = document.getElementById('catalog-view');
+    const moduleDetail = document.getElementById('module-detail');
+    const urlParams = new URLSearchParams(window.location.search);
+    const moduleId = urlParams.get('module');
+
+    // ---------- FIREBASE РАБОТА С ДАННЫМИ ----------
+    async function seedInitialModules() {
+        const snapshot = await db.collection('modules').limit(1).get();
+        if (snapshot.empty) {
+            const batch = db.batch();
+            initialModules.forEach(mod => {
+                const docRef = db.collection('modules').doc(String(mod.id));
+                batch.set(docRef, mod);
+            });
+            await batch.commit();
+        }
+    }
+
+    async function loadModulesFromFirestore() {
+        const snapshot = await db.collection('modules').get();
+        modules = [];
+        snapshot.forEach(doc => {
+            modules.push({ id: parseInt(doc.id), ...doc.data() });
+        });
+        modules.sort((a, b) => a.id - b.id);
+        filteredModules = [...modules];
+    }
+
+    async function deleteModuleFromFirestore(id) {
+        await db.collection('modules').doc(String(id)).delete();
+        await loadModulesFromFirestore();
+        applyFilters();
+        if (moduleDetail.classList.contains('active')) {
+            showCatalog();
+        }
+    }
+
+    async function saveModuleToFirestore(mod) {
+        await db.collection('modules').doc(String(mod.id)).set(mod);
+    }
+
+    // ---------- КОРЗИНА ----------
+    function updateCartBadge() {
+        const badge = document.getElementById('cart-badge');
+        badge.textContent = cart.length;
+        badge.classList.toggle('show', cart.length > 0);
+    }
+
+    function addToCart(moduleId) {
+        if (!cart.includes(moduleId)) {
+            cart.push(moduleId);
+            localStorage.setItem('cartModules', JSON.stringify(cart));
+            updateCartBadge();
+            alert('Модуль добавлен в корзину');
+        } else {
+            alert('Модуль уже в корзине');
+        }
+    }
+
+    function removeFromCart(moduleId) {
+        cart = cart.filter(id => id !== moduleId);
+        localStorage.setItem('cartModules', JSON.stringify(cart));
+        updateCartBadge();
+        renderCartModal();
+    }
+
+    function renderCartModal() {
+        const container = document.getElementById('cart-items-container');
+        if (cart.length === 0) {
+            container.innerHTML = '<p class="cart-empty">Корзина пуста</p>';
+            return;
+        }
+        let html = '<ul class="cart-list">';
+        cart.forEach(id => {
+            const mod = modules.find(m => m.id === id);
+            if (mod) html += `<li><span>${mod.title}</span> <button class="cart-remove" data-id="${id}">Удалить</button></li>`;
+        });
+        html += '</ul>';
+        container.innerHTML = html;
+        document.querySelectorAll('.cart-remove').forEach(btn => {
+            btn.addEventListener('click', () => removeFromCart(parseInt(btn.dataset.id)));
+        });
+    }
+
+    function openCartModal() { document.getElementById('cart-modal').classList.add('show'); renderCartModal(); }
+    function closeCartModal() { document.getElementById('cart-modal').classList.remove('show'); }
+
+    // ---------- АВТОРИЗАЦИЯ ----------
+    function isMethodistColledge() {
+        return currentUser === 'metodist@college.ru';
+    }
+
+    function updateAuthUI() {
+        const authButtons = document.getElementById('auth-buttons');
+        const userBlock = document.getElementById('user-block');
+        if (currentUser) {
+            authButtons.style.display = 'none';
+            userBlock.style.display = 'flex';
+            document.getElementById('username-display').textContent = currentUser;
+        } else {
+            authButtons.style.display = 'block';
+            userBlock.style.display = 'none';
+        }
+        updateCreateButtonVisibility();
+        renderCards();
+    }
+
+    function updateCreateButtonVisibility() {
+        const container = document.getElementById('create-module-btn-container');
+        if (!container) return;
+        container.innerHTML = isMethodistColledge()
+            ? '<button class="btn-include" id="create-module-btn">Создать новый модуль</button>'
+            : '';
+        const btn = document.getElementById('create-module-btn');
+        if (btn) btn.addEventListener('click', openCreateModuleModal);
+    }
+
+    auth.onAuthStateChanged(async (user) => {
+        if (user) {
+            currentUser = user.email;
+            sessionStorage.setItem('currentUser', currentUser);
+        } else {
+            currentUser = null;
+            sessionStorage.removeItem('currentUser');
+        }
+        updateAuthUI();
+        if (moduleDetail.classList.contains('active')) {
+            const id = new URLSearchParams(window.location.search).get('module');
+            if (id) showModuleDetail(id);
+        }
+    });
+
+    const authForm = document.getElementById('auth-form');
+    const authEmail = document.getElementById('auth-email');
+    const authPassword = document.getElementById('auth-password');
+    const authError = document.getElementById('auth-error');
+
+    authForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        authError.textContent = '';
+        try {
+            await auth.signInWithEmailAndPassword(authEmail.value, authPassword.value);
+            closeLoginModal();
+        } catch (error) {
+            authError.textContent = error.message;
+        }
+    });
+
+    document.getElementById('auth-register-btn').addEventListener('click', async () => {
+        authError.textContent = '';
+        try {
+            await auth.createUserWithEmailAndPassword(authEmail.value, authPassword.value);
+            closeLoginModal();
+        } catch (error) {
+            authError.textContent = error.message;
+        }
+    });
+
+    document.getElementById('logout-btn').addEventListener('click', () => {
+        auth.signOut();
+    });
+
+    function openLoginModal() { document.getElementById('login-modal').classList.add('show'); }
+    function closeLoginModal() { document.getElementById('login-modal').classList.remove('show'); }
+
+    // ---------- КАТАЛОГ ----------
+    function renderCards() {
+        if (!cardsContainer) return;
+        const start = (currentPage - 1) * cardsPerPage;
+        const pageModules = filteredModules.slice(start, start + cardsPerPage);
+        let html = '';
+        pageModules.forEach(mod => {
+            const priceDisplay = mod.price === 0
+                ? '<span class="card-price free">БЕСПЛАТНО</span>'
+                : `<span class="card-price paid">${mod.price.toLocaleString()} ₽</span>`;
+            const editBtn = isMethodistColledge()
+                ? `<button class="btn-edit" data-id="${mod.id}">Редактировать</button>`
+                : '';
+            const deleteBtn = isMethodistColledge()
+                ? `<button class="btn-delete" data-id="${mod.id}">Удалить</button>`
+                : '';
+            html += `
+                <div class="card">
+                    <div class="card-title">${mod.title}</div>
+                    <div class="card-desc">${mod.desc}</div>
+                    <div class="card-footer">
+                        ${priceDisplay}
+                        <div>
+                            <a href="?module=${mod.id}" class="btn-detail">ПОДРОБНЕЕ</a>
+                            ${editBtn}
+                            ${deleteBtn}
+                        </div>
+                    </div>
+                </div>`;
+        });
+        cardsContainer.innerHTML = html;
+        document.querySelectorAll('.btn-edit').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                window.location.href = `?module=${btn.dataset.id}`;
+            });
+        });
+        document.querySelectorAll('.btn-delete').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                if (confirm('Удалить модуль навсегда?')) {
+                    await deleteModuleFromFirestore(parseInt(btn.dataset.id));
+                }
+            });
+        });
+    }
+
+    function renderPagination() {
+        if (!paginationContainer) return;
+        const totalPages = Math.ceil(filteredModules.length / cardsPerPage);
+        let html = `<button ${currentPage === 1 ? 'disabled' : ''} data-page="prev">«</button>`;
+        for (let i = 1; i <= totalPages; i++) {
+            html += `<button class="${i === currentPage ? 'active' : ''}" data-page="${i}">${i}</button>`;
+        }
+        html += `<button ${currentPage === totalPages || totalPages === 0 ? 'disabled' : ''} data-page="next">»</button>`;
+        paginationContainer.innerHTML = html;
+        paginationContainer.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const page = btn.dataset.page;
+                if (page === 'prev') { if (currentPage > 1) currentPage--; }
+                else if (page === 'next') { if (currentPage < totalPages) currentPage++; }
+                else { currentPage = parseInt(page); }
+                renderCards();
+                renderPagination();
+            });
+        });
+    }
+
+    function applyFilters() {
+        const nameFilter = document.getElementById('filter-name').value;
+        const professionFilter = document.getElementById('filter-profession').value;
+        const formFilter = document.getElementById('filter-form').value;
+        const ovzFilter = document.getElementById('filter-ovz').value;
+        const paymentFilter = document.getElementById('payment-type').value;
+        const costFrom = parseFloat(document.getElementById('cost-from').value) || 0;
+        const costTo = parseFloat(document.getElementById('cost-to').value) || Infinity;
+        const hoursFrom = parseInt(document.getElementById('hours-from').value) || 0;
+        const hoursTo = parseInt(document.getElementById('hours-to').value) || Infinity;
+        const eduTypeFilter = document.getElementById('filter-edu-type').value;
+        const programTypeFilter = document.getElementById('filter-program-type').value;
+        const industryFilter = document.getElementById('filter-industry').value;
+        const dotFilter = document.getElementById('filter-dot').value;
+        const onsiteFilter = document.getElementById('filter-onsite').value;
+        const checkedEdu = Array.from(document.querySelectorAll('#edu-checkboxes input:checked')).map(cb => cb.value);
+
+        filteredModules = modules.filter(mod => {
+            if (nameFilter && mod.title !== nameFilter) return false;
+            if (professionFilter && mod.profession !== professionFilter) return false;
+            if (formFilter && mod.form !== formFilter) return false;
+            if (ovzFilter === 'Да' && mod.ovz !== 'Да') return false;
+            if (ovzFilter === 'Нет' && mod.ovz !== 'Нет') return false;
+            if (paymentFilter === 'free' && !mod.free) return false;
+            if (paymentFilter === 'paid' && mod.free) return false;
+            if (!mod.free && (mod.price < costFrom || mod.price > costTo)) return false;
+            if (mod.hours < hoursFrom || mod.hours > hoursTo) return false;
+            if (eduTypeFilter && mod.eduType !== eduTypeFilter) return false;
+            if (programTypeFilter && mod.programType !== programTypeFilter) return false;
+            if (industryFilter && mod.industry !== industryFilter) return false;
+            if (dotFilter === 'Да' && mod.dot !== 'Да') return false;
+            if (dotFilter === 'Нет' && mod.dot !== 'Нет') return false;
+            if (onsiteFilter === 'Да' && mod.onsite !== 'Да') return false;
+            if (onsiteFilter === 'Нет' && mod.onsite !== 'Нет') return false;
+            if (checkedEdu.length > 0 && mod.eduRequirements) {
+                if (!mod.eduRequirements.some(r => checkedEdu.includes(r))) return false;
+            }
+            return true;
+        });
+        currentPage = 1;
+        renderCards();
+        renderPagination();
+    }
+
+    function showCatalog() {
+        catalogView.style.display = 'block';
+        moduleDetail.classList.remove('active');
+        history.pushState(null, '', window.location.pathname);
+        filteredModules = [...modules];
+        currentPage = 1;
+        renderCards();
+        renderPagination();
+    }
+
+    function showModuleDetail(id) {
+        const mod = modules.find(m => m.id === parseInt(id));
+        if (!mod) { showCatalog(); return; }
+        catalogView.style.display = 'none';
+        moduleDetail.classList.add('active');
+        document.getElementById('detail-view').style.display = 'block';
+        document.getElementById('edit-form-container').style.display = 'none';
+        document.getElementById('btn-edit-mode').style.display = isMethodistColledge() ? 'inline-block' : 'none';
+        document.getElementById('btn-save-edit').style.display = 'none';
+        document.getElementById('btn-cancel-edit').style.display = 'none';
+        document.getElementById('btn-include').style.display = 'inline-block';
+
+        document.getElementById('module-meta').innerHTML = `
+            <p><strong>Профессии:</strong> ${mod.profession}</p>
+            <p><strong>Компетенции:</strong> ${mod.competencies}</p>
+            <p><strong>Категории обучающихся:</strong> ${mod.categories}</p>
+            <p><strong>Форма обучения:</strong> ${mod.form}</p>
+            <p><strong>ОВЗ:</strong> ${mod.ovz}</p>
+            <p><strong>Бесплатно:</strong> ${mod.free ? 'Да' : 'Нет'}</p>
+            <p><strong>Вид образования:</strong> ${mod.eduType || '—'}</p>
+            <p><strong>Тип программы:</strong> ${mod.programType || '—'}</p>
+            <p><strong>Отрасль:</strong> ${mod.industry || '—'}</p>
+            <p><strong>ДОТ:</strong> ${mod.dot || '—'}</p>
+            <p><strong>Обучение на базе заказчика:</strong> ${mod.onsite || '—'}</p>
+            <p><strong>Требования к образованию:</strong> ${mod.eduRequirements ? mod.eduRequirements.join(', ') : '—'}</p>`;
+        document.getElementById('module-name').textContent = mod.title;
+        document.getElementById('module-theory').textContent = mod.theoretical;
+        document.getElementById('module-duration').textContent = mod.duration;
+        document.getElementById('module-lectures').textContent = mod.lectures + ' лекций';
+        document.getElementById('module-practices').textContent = mod.practices + ' занятий';
+        document.getElementById('module-topics').innerHTML = mod.topics.map(t => `<li>${t}</li>`).join('');
+        document.getElementById('module-know').innerHTML = mod.know.map(k => `<li>${k}</li>`).join('');
+        document.getElementById('module-skills').innerHTML = mod.skills.map(s => `<li>${s}</li>`).join('');
+
+        document.getElementById('btn-include').onclick = () => addToCart(mod.id);
+        document.getElementById('btn-edit-mode').onclick = () => enterEditMode(mod);
+    }
+
+    function buildSelectOptions(options, selectedValue) {
+        return options.map(opt => `<option value="${opt}" ${opt === selectedValue ? 'selected' : ''}>${opt}</option>`).join('');
+    }
+
+    function buildCheckboxGroup(name, options, selectedValues) {
+        return options.map(opt => `<label><input type="checkbox" name="${name}" value="${opt}" ${selectedValues.includes(opt) ? 'checked' : ''}> ${opt}</label>`).join('');
+    }
+
+    function enterEditMode(mod) {
+        document.getElementById('detail-view').style.display = 'none';
+        document.getElementById('edit-form-container').style.display = 'block';
+        document.getElementById('btn-edit-mode').style.display = 'none';
+        document.getElementById('btn-include').style.display = 'none';
+        document.getElementById('btn-save-edit').style.display = 'inline-block';
+        document.getElementById('btn-cancel-edit').style.display = 'inline-block';
+
+        const professions = ["Программист","Электромонтажник","Повар","Web-дизайнер","Сварщик","Медицинская сестра","Бухгалтер","Ландшафтный архитектор","Автомеханик","Специалист по кибербезопасности","Графический дизайнер","Строитель-отделочник","Технолог пищевой промышленности","Менеджер по туризму","Фармацевт","Делопроизводитель","3D-моделлер","Маркетолог","Педагог доп. образования","Переводчик"];
+        const forms = ["Очно","Очно-заочно","Заочно"];
+        const eduTypes = ["ДПО","ПО"];
+        const programTypes = ["Профессиональная подготовка","Повышение квалификации","Профессиональная переподготовка"];
+        const industries = ["Нефтехимия","Машиностроение","Агропромышленный комплекс","Производство пищевых продуктов","Строительство","Сфера услуг","Туризм","Здравоохранение","Образование","Информационные технологии","Творчество и дизайн"];
+        const eduReqOptions = ["basic","secondary","vocational","incomplete_higher","bachelor","master","specialist","dpo","degree","any"];
+
+        document.getElementById('edit-form-container').innerHTML = `
+            <div class="edit-form">
+                <label>Название</label><input type="text" id="edit-title" value="${mod.title}">
+                <label>Описание</label><input type="text" id="edit-desc" value="${mod.desc}">
+                <label>Стоимость (0 = бесплатно)</label><input type="number" id="edit-price" value="${mod.price}">
+                <label>Профессия</label><select id="edit-profession">${buildSelectOptions(professions, mod.profession)}</select>
+                <label>Компетенции</label><input type="text" id="edit-competencies" value="${mod.competencies}">
+                <label>Категории</label><input type="text" id="edit-categories" value="${mod.categories}">
+                <label>Форма обучения</label><select id="edit-form">${buildSelectOptions(forms, mod.form)}</select>
+                <label>ОВЗ</label><select id="edit-ovz"><option value="Да" ${mod.ovz==='Да'?'selected':''}>Да</option><option value="Нет" ${mod.ovz==='Нет'?'selected':''}>Нет</option></select>
+                <label>Бесплатно?</label><select id="edit-free"><option value="true" ${mod.free?'selected':''}>Да</option><option value="false" ${!mod.free?'selected':''}>Нет</option></select>
+                <label>Вид образования</label><select id="edit-eduType">${buildSelectOptions(eduTypes, mod.eduType || '')}</select>
+                <label>Тип программы</label><select id="edit-programType">${buildSelectOptions(programTypes, mod.programType || '')}</select>
+                <label>Отрасль</label><select id="edit-industry">${buildSelectOptions(industries, mod.industry || '')}</select>
+                <label>Возможность применения ДОТ</label><select id="edit-dot"><option value="Да" ${mod.dot==='Да'?'selected':''}>Да</option><option value="Нет" ${mod.dot==='Нет'?'selected':''}>Нет</option></select>
+                <label>Обучение на базе заказчика</label><select id="edit-onsite"><option value="Да" ${mod.onsite==='Да'?'selected':''}>Да</option><option value="Нет" ${mod.onsite==='Нет'?'selected':''}>Нет</option></select>
+                <label>Требования к образованию</label><div class="checkbox-group" id="edit-eduRequirements">${buildCheckboxGroup('eduReq', eduReqOptions, mod.eduRequirements || [])}</div>
+                <label>Продолжительность</label><input type="text" id="edit-duration" value="${mod.duration}">
+                <label>Лекций</label><input type="number" id="edit-lectures" value="${mod.lectures}">
+                <label>Практик</label><input type="number" id="edit-practices" value="${mod.practices}">
+                <label>Часов</label><input type="number" id="edit-hours" value="${mod.hours}">
+                <label>Теория</label><textarea id="edit-theoretical">${mod.theoretical}</textarea>
+                <label>Темы (через запятую)</label><input type="text" id="edit-topics" value="${mod.topics.join(', ')}">
+                <label>Знания (через запятую)</label><input type="text" id="edit-know" value="${mod.know.join(', ')}">
+                <label>Умения (через запятую)</label><input type="text" id="edit-skills" value="${mod.skills.join(', ')}">
+            </div>`;
+        document.getElementById('btn-save-edit').onclick = () => saveModuleChanges(mod.id);
+        document.getElementById('btn-cancel-edit').onclick = () => showModuleDetail(mod.id);
+    }
+
+    async function saveModuleChanges(id) {
+        const mod = modules.find(m => m.id === id);
+        if (!mod) return;
+        mod.title = document.getElementById('edit-title').value;
+        mod.desc = document.getElementById('edit-desc').value;
+        mod.price = parseInt(document.getElementById('edit-price').value) || 0;
+        mod.profession = document.getElementById('edit-profession').value;
+        mod.competencies = document.getElementById('edit-competencies').value;
+        mod.categories = document.getElementById('edit-categories').value;
+        mod.form = document.getElementById('edit-form').value;
+        mod.ovz = document.getElementById('edit-ovz').value;
+        mod.free = document.getElementById('edit-free').value === 'true';
+        mod.eduType = document.getElementById('edit-eduType').value;
+        mod.programType = document.getElementById('edit-programType').value;
+        mod.industry = document.getElementById('edit-industry').value;
+        mod.dot = document.getElementById('edit-dot').value;
+        mod.onsite = document.getElementById('edit-onsite').value;
+        mod.eduRequirements = Array.from(document.querySelectorAll('#edit-eduRequirements input:checked')).map(cb => cb.value);
+        mod.duration = document.getElementById('edit-duration').value;
+        mod.lectures = parseInt(document.getElementById('edit-lectures').value) || 0;
+        mod.practices = parseInt(document.getElementById('edit-practices').value) || 0;
+        mod.hours = parseInt(document.getElementById('edit-hours').value) || 0;
+        mod.theoretical = document.getElementById('edit-theoretical').value;
+        mod.topics = document.getElementById('edit-topics').value.split(',').map(s => s.trim());
+        mod.know = document.getElementById('edit-know').value.split(',').map(s => s.trim());
+        mod.skills = document.getElementById('edit-skills').value.split(',').map(s => s.trim());
+        await saveModuleToFirestore(mod);
+        await loadModulesFromFirestore();
+        alert('Изменения сохранены');
+        filteredModules = [...modules];
+        showModuleDetail(id);
+    }
+
+    function openCreateModuleModal() {
+        document.getElementById('create-module-modal').classList.add('show');
+        const professions = ["Программист","Электромонтажник","Повар","Web-дизайнер","Сварщик","Медицинская сестра","Бухгалтер","Ландшафтный архитектор","Автомеханик","Специалист по кибербезопасности","Графический дизайнер","Строитель-отделочник","Технолог пищевой промышленности","Менеджер по туризму","Фармацевт","Делопроизводитель","3D-моделлер","Маркетолог","Педагог доп. образования","Переводчик"];
+        const forms = ["Очно","Очно-заочно","Заочно"];
+        const eduTypes = ["ДПО","ПО"];
+        const programTypes = ["Профессиональная подготовка","Повышение квалификации","Профессиональная переподготовка"];
+        const industries = ["Нефтехимия","Машиностроение","Агропромышленный комплекс","Производство пищевых продуктов","Строительство","Сфера услуг","Туризм","Здравоохранение","Образование","Информационные технологии","Творчество и дизайн"];
+        const eduReqOptions = ["basic","secondary","vocational","incomplete_higher","bachelor","master","specialist","dpo","degree","any"];
+
+        document.getElementById('create-module-form').innerHTML = `
+            <div class="edit-form">
+                <label>Название</label><input type="text" id="new-title" required>
+                <label>Описание</label><input type="text" id="new-desc">
+                <label>Стоимость</label><input type="number" id="new-price" value="0">
+                <label>Профессия</label><select id="new-profession">${buildSelectOptions(professions, '')}</select>
+                <label>Компетенции</label><input type="text" id="new-competencies">
+                <label>Категории</label><input type="text" id="new-categories">
+                <label>Форма обучения</label><select id="new-form">${buildSelectOptions(forms, '')}</select>
+                <label>ОВЗ</label><select id="new-ovz"><option>Да</option><option>Нет</option></select>
+                <label>Бесплатно?</label><select id="new-free"><option value="true">Да</option><option value="false" selected>Нет</option></select>
+                <label>Вид образования</label><select id="new-eduType">${buildSelectOptions(eduTypes, '')}</select>
+                <label>Тип программы</label><select id="new-programType">${buildSelectOptions(programTypes, '')}</select>
+                <label>Отрасль</label><select id="new-industry">${buildSelectOptions(industries, '')}</select>
+                <label>Возможность применения ДОТ</label><select id="new-dot"><option>Да</option><option>Нет</option></select>
+                <label>Обучение на базе заказчика</label><select id="new-onsite"><option>Да</option><option>Нет</option></select>
+                <label>Требования к образованию</label><div class="checkbox-group" id="new-eduRequirements">${buildCheckboxGroup('eduReq', eduReqOptions, [])}</div>
+                <label>Продолжительность</label><input type="text" id="new-duration">
+                <label>Лекций</label><input type="number" id="new-lectures" value="0">
+                <label>Практик</label><input type="number" id="new-practices" value="0">
+                <label>Часов</label><input type="number" id="new-hours" value="0">
+                <label>Теория</label><textarea id="new-theoretical"></textarea>
+                <label>Темы (через запятую)</label><input type="text" id="new-topics">
+                <label>Знания (через запятую)</label><input type="text" id="new-know">
+                <label>Умения (через запятую)</label><input type="text" id="new-skills">
+                <div class="form-actions">
+                    <button class="btn-include" id="save-new-module">Создать</button>
+                    <button class="btn-edit-mode" id="cancel-new-module">Отмена</button>
+                </div>
+            </div>`;
+        document.getElementById('save-new-module').addEventListener('click', createNewModule);
+        document.getElementById('cancel-new-module').addEventListener('click', closeCreateModuleModal);
+    }
+
+    function closeCreateModuleModal() { document.getElementById('create-module-modal').classList.remove('show'); }
+
+    async function createNewModule() {
+        const title = document.getElementById('new-title').value.trim();
+        if (!title) { alert('Введите название'); return; }
+        const maxId = modules.length > 0 ? Math.max(...modules.map(m => m.id)) : 0;
+        const newId = maxId + 1;
+        const newModule = {
+            id: newId,
+            title,
+            desc: document.getElementById('new-desc').value,
+            price: parseInt(document.getElementById('new-price').value) || 0,
+            profession: document.getElementById('new-profession').value,
+            competencies: document.getElementById('new-competencies').value,
+            categories: document.getElementById('new-categories').value,
+            form: document.getElementById('new-form').value,
+            ovz: document.getElementById('new-ovz').value,
+            free: document.getElementById('new-free').value === 'true',
+            eduType: document.getElementById('new-eduType').value,
+            programType: document.getElementById('new-programType').value,
+            industry: document.getElementById('new-industry').value,
+            dot: document.getElementById('new-dot').value,
+            onsite: document.getElementById('new-onsite').value,
+            eduRequirements: Array.from(document.querySelectorAll('#new-eduRequirements input:checked')).map(cb => cb.value),
+            duration: document.getElementById('new-duration').value,
+            lectures: parseInt(document.getElementById('new-lectures').value) || 0,
+            practices: parseInt(document.getElementById('new-practices').value) || 0,
+            hours: parseInt(document.getElementById('new-hours').value) || 0,
+            theoretical: document.getElementById('new-theoretical').value,
+            topics: document.getElementById('new-topics').value.split(',').map(s => s.trim()),
+            know: document.getElementById('new-know').value.split(',').map(s => s.trim()),
+            skills: document.getElementById('new-skills').value.split(',').map(s => s.trim())
+        };
+        await saveModuleToFirestore(newModule);
+        await loadModulesFromFirestore();
+        closeCreateModuleModal();
+        filteredModules = [...modules];
+        renderCards();
+        renderPagination();
+        alert('Модуль создан');
+    }
+
+    function initAccessibility() {
+        const isActive = localStorage.getItem('accessibilityMode') === 'true';
+        if (isActive) document.body.classList.add('accessibility-mode');
+        document.getElementById('glasses-icon').addEventListener('click', () => {
+            document.body.classList.toggle('accessibility-mode');
+            localStorage.setItem('accessibilityMode', document.body.classList.contains('accessibility-mode'));
+        });
+    }
+
+    // ---------- ЗАПУСК ПРИЛОЖЕНИЯ ----------
+    (async function startup() {
+        await seedInitialModules();
+        await loadModulesFromFirestore();
+        filteredModules = [...modules];
+        if (moduleId !== null) {
+            showModuleDetail(moduleId);
+        } else {
+            renderCards();
+            renderPagination();
+        }
+        updateCartBadge();
+        updateAuthUI();
+        initAccessibility();
+
+        document.getElementById('btn-find').addEventListener('click', applyFilters);
+        document.getElementById('home-link').addEventListener('click', (e) => { e.preventDefault(); showCatalog(); });
+        document.getElementById('back-to-catalog').addEventListener('click', showCatalog);
+        document.getElementById('cart-icon-wrapper').addEventListener('click', openCartModal);
+        document.getElementById('close-cart').addEventListener('click', closeCartModal);
+        window.addEventListener('click', (e) => {
+            if (e.target === document.getElementById('cart-modal')) closeCartModal();
+            if (e.target === document.getElementById('login-modal')) closeLoginModal();
+            if (e.target === document.getElementById('create-module-modal')) closeCreateModuleModal();
+        });
+        document.getElementById('login-btn').addEventListener('click', openLoginModal);
+        document.getElementById('register-btn').addEventListener('click', openLoginModal);
+        document.getElementById('close-login').addEventListener('click', closeLoginModal);
+
+        const paymentSelect = document.getElementById('payment-type');
+        const costFrom = document.getElementById('cost-from');
+        const costTo = document.getElementById('cost-to');
+        function toggleCostFields() {
+            if (paymentSelect.value === 'free') {
+                costFrom.disabled = true;
+                costTo.disabled = true;
+                costFrom.value = '';
+                costTo.value = '';
+            } else {
+                costFrom.disabled = false;
+                costTo.disabled = false;
+            }
+        }
+        paymentSelect?.addEventListener('change', toggleCostFields);
+        toggleCostFields();
+    })();
+</script>
+</body>
+</html>
