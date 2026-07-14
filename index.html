@@ -526,7 +526,7 @@
     </style>
 </head>
 <body>
-
+<datalist id="professions-datalist"></datalist>
     <!-- ЭКРАН ВХОДА (показывается, если не авторизован) -->
     <div id="auth-screen">
         <div class="auth-container">
@@ -588,9 +588,10 @@
                         <div class="filter-group"><label>Наименование модуля</label><select id="filter-name"><option value="">Все</option><option>Основы программирования на Python</option><option>Электромонтаж и наладка оборудования</option><option>Поварское дело</option><option>Web-дизайн и разработка</option><option>Сварочные технологии</option><option>Медицинский массаж</option><option>Бухгалтерский учёт и налогообложение</option><option>Ландшафтный дизайн</option><option>Ремонт и обслуживание автомобилей</option><option>IT-безопасность</option><option>Графический дизайн</option><option>Строительство и отделка</option><option>Технологии молочного производства</option><option>Туризм и гостиничное дело</option><option>Фармацевтика</option><option>Документационное обеспечение управления</option><option>3D-моделирование</option><option>Маркетинг и реклама</option><option>Педагогика дополнительного образования</option><option>Английский язык для профессиональной деятельности</option></select></div>
                         <div class="filter-group"><label>Вид образования</label><select id="filter-edu-type"><option value="">Любой</option><option>ДПО</option><option>ПО</option></select></div>
                         <div class="filter-group"><label>К какому типу программы относится модуль</label><select id="filter-program-type"><option value="">Все</option><option>Профессиональная подготовка</option><option>Повышение квалификации</option><option>Профессиональная переподготовка</option></select></div>
-                        <div class="filter-group"><label>Отрасль</label><select id="filter-industry"><option value="">Все</option><option>Нефтехимия</option><option>Машиностроение</option><option>Агропромышленный комплекс</option><option>Производство пищевых продуктов</option><option>Строительство</option><option>Сфера услуг</option><option>Туризм</option><option>Здравоохранение</option><option>Образование</option><option>Информационные технологии</option><option>Творчество и дизайн</option></select></div>
-                        <div class="filter-group"><label>К какой профессии относится модуль</label><select id="filter-profession"><option value="">Все</option><option>Программист</option><option>Электромонтажник</option><option>Повар</option><option>Web-дизайнер</option><option>Сварщик</option><option>Медицинская сестра</option><option>Бухгалтер</option><option>Ландшафтный архитектор</option><option>Автомеханик</option><option>Специалист по кибербезопасности</option><option>Графический дизайнер</option><option>Строитель-отделочник</option><option>Технолог пищевой промышленности</option><option>Менеджер по туризму</option><option>Фармацевт</option><option>Делопроизводитель</option><option>3D-моделлер</option><option>Маркетолог</option><option>Педагог доп. образования</option><option>Переводчик</option></select></div>
-                        <div class="filter-group"><label>Форма обучения</label><select id="filter-form"><option value="">Все</option><option>Очно</option><option>Очно-заочно</option><option>Заочно</option></select></div>
+                                            <div class="filter-group"><label>Отрасль</label><select id="filter-industry"><option value="">Все</option><option>Нефтехимия</option><option>Машиностроение</option><option>Агропромышленный комплекс</option><option>Производство пищевых продуктов</option><option>Строительство</option><option>Сфера услуг</option><option>Туризм</option><option>Здравоохранение</option><option>Образование</option><option>Информационные технологии</option><option>Творчество и дизайн</option></select></div>
+                        <div class="filter-group"><label>К какой профессии относится модуль</label><select id="filter-profession"><option value="">Все</option></select></div>
+                        <div class="filter-group"><label>Форма обучения</label>
+                            <select id="filter-form"><option value="">Все</option><option>Очно</option><option>Очно-заочно</option><option>Заочно</option></select></div>
                         <div class="filter-group"><label>Возможность применения ДОТ</label><select id="filter-dot"><option value="">Любое</option><option>Да</option><option>Нет</option></select></div>
                         <div class="filter-group"><label>Адаптация для людей с ОВЗ</label><select id="filter-ovz"><option value="">Любое</option><option>Да</option><option>Нет</option></select></div>
                         <div class="filter-group"><label>Платное или бесплатное обучение</label><select id="payment-type"><option value="any">Любое</option><option value="paid">Платное</option><option value="free">Бесплатное</option></select></div>
@@ -695,7 +696,52 @@
     let currentUser = null;
 
     let adminEmails = [];
+let professionsList = [];
+async function seedInitialProfessions() {
+    const snapshot = await db.collection('professions').limit(1).get();
+    if (snapshot.empty) {
+        const allProfs = initialModules.map(m => m.profession).filter((v, i, a) => a.indexOf(v) === i);
+        const batch = db.batch();
+        allProfs.forEach(p => {
+            const docRef = db.collection('professions').doc(p);
+            batch.set(docRef, {});
+        });
+        await batch.commit();
+    }
+}
+async function loadProfessions() {
+    const snapshot = await db.collection('professions').get();
+    professionsList = [];
+    snapshot.forEach(doc => professionsList.push(doc.id));
+    // сортировка по алфавиту
+    professionsList.sort((a, b) => a.localeCompare(b, 'ru'));
+    updateProfessionFilter(); // обновим фильтр в сайдбаре
+    // если открыто окно создания/редактирования, обновим в нём datalist
+    updateProfessionDatalist();
+}
 
+async function addProfession(name) {
+    const trimmed = name.trim();
+    if (!trimmed || professionsList.includes(trimmed)) return;
+    await db.collection('professions').doc(trimmed).set({});
+    professionsList.push(trimmed);
+    professionsList.sort((a, b) => a.localeCompare(b, 'ru'));
+    updateProfessionFilter();
+    updateProfessionDatalist();
+}
+
+function updateProfessionFilter() {
+    const select = document.getElementById('filter-profession');
+    if (!select) return;
+    select.innerHTML = '<option value="">Все</option>' +
+        professionsList.map(p => `<option value="${p}">${p}</option>`).join('');
+}
+
+function updateProfessionDatalist() {
+    const datalist = document.getElementById('professions-datalist');
+    if (!datalist) return;
+    datalist.innerHTML = professionsList.map(p => `<option value="${p}">`).join('');
+}
 async function loadAdminEmails() {
     const snapshot = await db.collection('admins').get();
     adminEmails = [];
@@ -1066,7 +1112,7 @@ async function seedAdmin() {
         document.getElementById('btn-save-edit').style.display = 'inline-block';
         document.getElementById('btn-cancel-edit').style.display = 'inline-block';
 
-        const professions = ["Программист","Электромонтажник","Повар","Web-дизайнер","Сварщик","Медицинская сестра","Бухгалтер","Ландшафтный архитектор","Автомеханик","Специалист по кибербезопасности","Графический дизайнер","Строитель-отделочник","Технолог пищевой промышленности","Менеджер по туризму","Фармацевт","Делопроизводитель","3D-моделлер","Маркетолог","Педагог доп. образования","Переводчик"];
+       
         const forms = ["Очно","Очно-заочно","Заочно"];
         const eduTypes = ["ДПО","ПО"];
         const programTypes = ["Профессиональная подготовка","Повышение квалификации","Профессиональная переподготовка"];
@@ -1078,7 +1124,7 @@ async function seedAdmin() {
                 <label>Название</label><input type="text" id="edit-title" value="${mod.title}">
                 <label>Описание</label><input type="text" id="edit-desc" value="${mod.desc}">
                 <label>Стоимость (0 = бесплатно)</label><input type="number" id="edit-price" value="${mod.price}">
-                <label>Профессия</label><select id="edit-profession">${buildSelectOptions(professions, mod.profession)}</select>
+                 <label>Профессия</label><input type="text" id="edit-profession" value="${mod.profession}" list="professions-datalist" autocomplete="off">
                 <label>Компетенции</label><input type="text" id="edit-competencies" value="${mod.competencies}">
                 <label>Категории</label><input type="text" id="edit-categories" value="${mod.categories}">
                 <label>Форма обучения</label><select id="edit-form">${buildSelectOptions(forms, mod.form)}</select>
@@ -1101,14 +1147,15 @@ async function seedAdmin() {
             </div>`;
         document.getElementById('btn-save-edit').onclick = () => saveModuleChanges(mod.id);
         document.getElementById('btn-cancel-edit').onclick = () => showModuleDetail(mod.id);
+                updateProfessionDatalist();
     }
-
     async function saveModuleChanges(id) {
         const mod = modules.find(m => m.id === id);
         if (!mod) return;
         mod.title = document.getElementById('edit-title').value;
         mod.desc = document.getElementById('edit-desc').value;
         mod.price = parseInt(document.getElementById('edit-price').value) || 0;
+                await addProfession(document.getElementById('edit-profession').value);
         mod.profession = document.getElementById('edit-profession').value;
         mod.competencies = document.getElementById('edit-competencies').value;
         mod.categories = document.getElementById('edit-categories').value;
@@ -1138,7 +1185,6 @@ async function seedAdmin() {
 
     function openCreateModuleModal() {
         document.getElementById('create-module-modal').classList.add('show');
-        const professions = ["Программист","Электромонтажник","Повар","Web-дизайнер","Сварщик","Медицинская сестра","Бухгалтер","Ландшафтный архитектор","Автомеханик","Специалист по кибербезопасности","Графический дизайнер","Строитель-отделочник","Технолог пищевой промышленности","Менеджер по туризму","Фармацевт","Делопроизводитель","3D-моделлер","Маркетолог","Педагог доп. образования","Переводчик"];
         const forms = ["Очно","Очно-заочно","Заочно"];
         const eduTypes = ["ДПО","ПО"];
         const programTypes = ["Профессиональная подготовка","Повышение квалификации","Профессиональная переподготовка"];
@@ -1150,7 +1196,7 @@ async function seedAdmin() {
                 <label>Название</label><input type="text" id="new-title" required>
                 <label>Описание</label><input type="text" id="new-desc">
                 <label>Стоимость</label><input type="number" id="new-price" value="0">
-                <label>Профессия</label><select id="new-profession">${buildSelectOptions(professions, '')}</select>
+                                <label>Профессия</label><input type="text" id="new-profession" list="professions-datalist" placeholder="Выберите или введите свою" autocomplete="off">
                 <label>Компетенции</label><input type="text" id="new-competencies">
                 <label>Категории</label><input type="text" id="new-categories">
                 <label>Форма обучения</label><select id="new-form">${buildSelectOptions(forms, '')}</select>
@@ -1177,6 +1223,7 @@ async function seedAdmin() {
             </div>`;
         document.getElementById('save-new-module').addEventListener('click', createNewModule);
         document.getElementById('cancel-new-module').addEventListener('click', closeCreateModuleModal);
+                updateProfessionDatalist();
     }
 
     function closeCreateModuleModal() { document.getElementById('create-module-modal').classList.remove('show'); }
@@ -1184,6 +1231,7 @@ async function seedAdmin() {
     async function createNewModule() {
         const title = document.getElementById('new-title').value.trim();
         if (!title) { alert('Введите название'); return; }
+                await addProfession(document.getElementById('new-profession').value);
         const maxId = modules.length > 0 ? Math.max(...modules.map(m => m.id)) : 0;
         const newId = maxId + 1;
         const newModule = {
@@ -1236,6 +1284,8 @@ async function seedAdmin() {
         await loadModulesFromFirestore();
         await seedAdmin();
         await loadAdminEmails();
+          await seedInitialProfessions();
+        await loadProfessions();
         filteredModules = [...modules];
 
         // Определяем текущего пользователя сразу (если сессия жива)
