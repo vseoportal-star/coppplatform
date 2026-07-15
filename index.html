@@ -116,13 +116,23 @@
             box-shadow: 0 2px 8px rgba(0,0,0,0.15);
         }
         .logo {
-            width: 260px;
-            flex-shrink: 0;
-            font-size: 15px;
-            font-weight: 500;
-            line-height: 1.2;
-            letter-spacing: 0.3px;
-        }
+    display: flex;
+    align-items: center;
+    gap: 0px;
+    flex-shrink: 0;
+}
+.logo-img {
+    height: 90px;        /* подгони высоту под дизайн */
+    width: auto;
+    flex-shrink: 0;
+}
+.logo-text {
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.2;
+    letter-spacing: 0.3px;
+    color: #ffffff;
+}
         .main-title {
             flex-grow: 1;
             text-align: center;
@@ -587,7 +597,10 @@
     <!-- ОСНОВНОЙ САЙТ (скрыт до авторизации) -->
     <div id="main-app">
         <header class="header">
-            <div class="logo">Центр<br>опережающей<br>профессиональной<br>подготовки</div>
+            <div class="logo">
+    <img src="copp-logo.png" alt="Логотип ЦОПП" class="logo-img">
+    <span class="logo-text">Центр<br>опережающей<br>профессиональной<br>подготовки</span>
+</div>
             <div class="main-title">Система подбора и комплектации образовательных программ</div>
             <div class="right-block" id="right-block">
                 <div class="cart-icon-wrapper" id="cart-icon-wrapper">
