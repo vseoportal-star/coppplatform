@@ -523,6 +523,43 @@
             font-size: 14px;
         }
         .form-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 15px; }
+        .admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+    background: #fff;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    border-radius: 6px;
+    overflow: hidden;
+}
+.admin-table th, .admin-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #e0e0e0;
+}
+.admin-table th {
+    background-color: #1E4082;
+    color: #fff;
+    font-weight: 500;
+}
+.admin-table tr:hover { background-color: #f8f9fa; }
+.admin-table select {
+    padding: 5px 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 13px;
+}
+.admin-save-btn {
+    background: #1E4082;
+    color: #fff;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 4px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+.admin-save-btn:hover { background-color: #15315f; }
     </style>
 </head>
 <body>
@@ -576,6 +613,7 @@
                 <li><a href="#" id="home-link">Главная</a></li>
                 <li><a href="https://cp.copp55.ru">Цифровая платформа</a></li>
                 <li><a href="https://copp55.ru">Сайт ЦОПП</a></li>
+                <li><a href="#" id="admin-link" style="display:none;">Администрирование</a></li>
             </ul>
         </nav>
 
@@ -644,7 +682,17 @@
             </div>
             <div id="edit-form-container" style="display: none;"></div>
         </div>
-
+<!-- Админ-панель -->
+<div id="admin-panel" style="display:none; padding: 20px 40px;">
+    <span class="back-link" id="back-from-admin">← Назад к каталогу</span>
+    <h2 style="margin: 20px 0; color: #1E4082;">Администрирование</h2>
+    <div style="margin-bottom: 20px;">
+        <button id="tab-users" class="btn-include" style="margin-right: 10px;">Пользователи</button>
+        <button id="tab-modules" class="btn-edit-mode">Модули на проверке</button>
+    </div>
+    <div id="admin-users-table"></div>
+    <div id="admin-modules-table" style="display:none;"></div>
+</div>
         <!-- Модальное окно корзины -->
         <div id="cart-modal" class="modal">
             <div class="modal-content">
@@ -667,26 +715,26 @@
     <script>
     // ---------- ДАННЫЕ ----------
     const initialModules = [
-        { id: 0, title: "Основы программирования на Python", desc: "Курс для начинающих, 40 часов, сертификат.", price: 12000, profession: "Программист", competencies: "Разработка программного обеспечения", categories: "Студенты, Взрослые", form: "Очно-заочно", ovz: "Нет", free: false, duration: "40 часов", lectures: 20, practices: 20, hours: 40, theoretical: "Изучение синтаксиса Python, основных библиотек и написание простых скриптов.", topics: ["Введение в Python", "Управляющие конструкции", "Функции и модули", "Работа с файлами"], know: ["Основы синтаксиса Python", "Типы данных", "Принципы ООП"], skills: ["Писать простые программы", "Работать с библиотеками", "Отлаживать код"], eduType: "ДПО", programType: "Повышение квалификации", industry: "Информационные технологии", dot: "Да", onsite: "Нет", eduRequirements: ["secondary"] },
-        { id: 1, title: "Электромонтаж и наладка оборудования", desc: "Практический курс, 72 часа.", price: 8500, profession: "Электромонтажник", competencies: "Электромонтажные работы", categories: "Взрослые, Безработные", form: "Очно", ovz: "Да", free: false, duration: "72 часа", lectures: 12, practices: 60, hours: 72, theoretical: "Монтаж электрооборудования, чтение схем, техника безопасности.", topics: ["Основы электротехники", "Монтаж проводки", "Наладка щитов"], know: ["Правила устройства электроустановок", "Типы кабелей"], skills: ["Выполнять монтаж", "Проводить диагностику"], eduType: "ПО", programType: "Профессиональная подготовка", industry: "Строительство", dot: "Нет", onsite: "Да", eduRequirements: ["vocational"] },
-        { id: 2, title: "Поварское дело", desc: "Обучение профессиональному поварскому мастерству.", price: 0, profession: "Повар", competencies: "Поварское искусство", categories: "Лица старше 50, Безработные", form: "Очно", ovz: "Да", free: true, duration: "48 часов", lectures: 10, practices: 38, hours: 48, theoretical: "Технологии приготовления блюд, санитария.", topics: ["Горячие блюда", "Соусы", "Десерты"], know: ["Рецептуры", "Нормы СанПиН"], skills: ["Готовить блюда", "Работать с оборудованием"], eduType: "ПО", programType: "Профессиональная подготовка", industry: "Производство пищевых продуктов", dot: "Нет", onsite: "Да", eduRequirements: ["basic"] },
-        { id: 3, title: "Web-дизайн и разработка", desc: "Современные технологии, 60 часов.", price: 15000, profession: "Web-дизайнер", competencies: "Дизайн интерфейсов", categories: "Студенты, Самозанятые", form: "Очно-заочно", ovz: "Нет", free: false, duration: "60 часов", lectures: 24, practices: 36, hours: 60, theoretical: "HTML, CSS, JavaScript, Figma.", topics: ["Верстка", "Адаптивный дизайн", "Основы UX"], know: ["Семантика HTML5", "Flexbox"], skills: ["Создавать сайты", "Прототипировать"], eduType: "ДПО", programType: "Повышение квалификации", industry: "Информационные технологии", dot: "Да", onsite: "Нет", eduRequirements: ["secondary"] },
-        { id: 4, title: "Сварочные технологии", desc: "Ручная дуговая сварка, 48 часов.", price: 9200, profession: "Сварщик", competencies: "Сварочное производство", categories: "Взрослые, ИП", form: "Очно", ovz: "Нет", free: false, duration: "48 часов", lectures: 8, practices: 40, hours: 48, theoretical: "Технология ручной дуговой сварки.", topics: ["Оборудование", "Техника безопасности", "Швы"], know: ["Типы электродов", "Режимы сварки"], skills: ["Варить стыковые швы", "Зачищать"], eduType: "ПО", programType: "Профессиональная подготовка", industry: "Машиностроение", dot: "Нет", onsite: "Да", eduRequirements: ["vocational"] },
-        { id: 5, title: "Медицинский массаж", desc: "Классический и лечебный массаж, 120 часов.", price: 22000, profession: "Медицинская сестра", competencies: "Медицинский массаж", categories: "Взрослые, Иные", form: "Очно", ovz: "Да", free: false, duration: "120 часов", lectures: 30, practices: 90, hours: 120, theoretical: "Анатомия, физиология, техники массажа.", topics: ["Классический массаж", "Лечебный"], know: ["Мышечные группы", "Показания"], skills: ["Выполнять массаж", "Оценивать состояние"], eduType: "ДПО", programType: "Профессиональная переподготовка", industry: "Здравоохранение", dot: "Нет", onsite: "Да", eduRequirements: ["bachelor"] },
-        { id: 6, title: "Бухгалтерский учёт и налогообложение", desc: "1С:Бухгалтерия, налоги, 36 часов.", price: 7500, profession: "Бухгалтер", competencies: "Бухгалтерский учёт", categories: "Студенты, Взрослые", form: "Заочно", ovz: "Нет", free: false, duration: "36 часов", lectures: 18, practices: 18, hours: 36, theoretical: "Основы бухучёта, 1С.", topics: ["План счетов", "Налоги", "Отчётность"], know: ["Законодательство", "Проводки"], skills: ["Вести учёт в 1С", "Составлять баланс"], eduType: "ДПО", programType: "Повышение квалификации", industry: "Сфера услуг", dot: "Да", onsite: "Нет", eduRequirements: ["bachelor"] },
-        { id: 7, title: "Ландшафтный дизайн", desc: "Проектирование садов и парков, 54 часа.", price: 11000, profession: "Ландшафтный архитектор", competencies: "Ландшафтное проектирование", categories: "Самозанятые, ИП", form: "Очно-заочно", ovz: "Нет", free: false, duration: "54 часа", lectures: 20, practices: 34, hours: 54, theoretical: "Основы композиции, дендрология.", topics: ["Стили садов", "Растения", "Проект"], know: ["Виды растений", "Дренаж"], skills: ["Создавать проект", "Подбирать растения"], eduType: "ДПО", programType: "Повышение квалификации", industry: "Творчество и дизайн", dot: "Да", onsite: "Нет", eduRequirements: ["secondary"] },
-        { id: 8, title: "Ремонт и обслуживание автомобилей", desc: "Диагностика и ремонт, 80 часов.", price: 6800, profession: "Автомеханик", competencies: "Ремонт автомобилей", categories: "Взрослые, Безработные", form: "Очно", ovz: "Нет", free: false, duration: "80 часов", lectures: 10, practices: 70, hours: 80, theoretical: "Устройство ДВС, ходовой.", topics: ["Двигатель", "Трансмиссия"], know: ["Диагностика", "Инструмент"], skills: ["Ремонтировать", "Проводить ТО"], eduType: "ПО", programType: "Профессиональная подготовка", industry: "Машиностроение", dot: "Нет", onsite: "Да", eduRequirements: ["vocational"] },
-        { id: 9, title: "IT-безопасность", desc: "Кибербезопасность и защита данных, 64 часа.", price: 18000, profession: "Специалист по кибербезопасности", competencies: "Защита информации", categories: "Студенты, ИП", form: "Очно-заочно", ovz: "Нет", free: false, duration: "64 часа", lectures: 32, practices: 32, hours: 64, theoretical: "Сетевые атаки, криптография.", topics: ["Файерволы", "Шифрование"], know: ["Виды угроз", "Политики безопасности"], skills: ["Настраивать защиту", "Анализировать инциденты"], eduType: "ДПО", programType: "Повышение квалификации", industry: "Информационные технологии", dot: "Да", onsite: "Нет", eduRequirements: ["bachelor"] },
-        { id: 10, title: "Графический дизайн", desc: "Adobe Photoshop и Illustrator, 48 часов.", price: 10500, profession: "Графический дизайнер", competencies: "Графический дизайн", categories: "Студенты, Самозанятые", form: "Очно", ovz: "Нет", free: false, duration: "48 часов", lectures: 16, practices: 32, hours: 48, theoretical: "Композиция, работа с цветом.", topics: ["Photoshop", "Illustrator"], know: ["Инструменты", "Тренды"], skills: ["Рисовать", "Верстать макеты"], eduType: "ДПО", programType: "Повышение квалификации", industry: "Творчество и дизайн", dot: "Да", onsite: "Нет", eduRequirements: ["secondary"] },
-        { id: 11, title: "Строительство и отделка", desc: "Технологии внутренней отделки, 56 часов.", price: 7800, profession: "Строитель-отделочник", competencies: "Отделочные работы", categories: "Безработные, Иные", form: "Очно", ovz: "Да", free: false, duration: "56 часов", lectures: 12, practices: 44, hours: 56, theoretical: "Штукатурка, плитка.", topics: ["Штукатурка", "Плитка"], know: ["Материалы", "Инструмент"], skills: ["Штукатурить", "Класть плитку"], eduType: "ПО", programType: "Профессиональная подготовка", industry: "Строительство", dot: "Нет", onsite: "Да", eduRequirements: ["basic"] },
-        { id: 12, title: "Технологии молочного производства", desc: "Современное оборудование, 40 часов.", price: 0, profession: "Технолог пищевой промышленности", competencies: "Молочное производство", categories: "Взрослые, Безработные", form: "Очно", ovz: "Да", free: true, duration: "40 часов", lectures: 20, practices: 20, hours: 40, theoretical: "Технология сыра, масла.", topics: ["Сыроделие", "Маслоделие"], know: ["Рецептуры", "Оборудование"], skills: ["Варить сыр", "Контролировать качество"], eduType: "ПО", programType: "Профессиональная подготовка", industry: "Производство пищевых продуктов", dot: "Нет", onsite: "Да", eduRequirements: ["basic"] },
-        { id: 13, title: "Туризм и гостиничное дело", desc: "Менеджмент в туризме, 50 часов.", price: 9000, profession: "Менеджер по туризму", competencies: "Туристический менеджмент", categories: "Студенты, ИП", form: "Заочно", ovz: "Нет", free: false, duration: "50 часов", lectures: 25, practices: 25, hours: 50, theoretical: "Маркетинг, бронирование.", topics: ["Гостиницы", "Туры"], know: ["Системы бронирования"], skills: ["Составлять туры"], eduType: "ДПО", programType: "Повышение квалификации", industry: "Туризм", dot: "Да", onsite: "Нет", eduRequirements: ["bachelor"] },
-        { id: 14, title: "Фармацевтика", desc: "Основы фармакологии и отпуск лекарств, 100 часов.", price: 25000, profession: "Фармацевт", competencies: "Фармацевтическая деятельность", categories: "Взрослые, Иные", form: "Очно", ovz: "Да", free: false, duration: "100 часов", lectures: 40, practices: 60, hours: 100, theoretical: "Лекарственные средства, рецептура.", topics: ["Фармакология", "Отпуск"], know: ["Препараты", "Дозировки"], skills: ["Консультировать", "Отпускать"], eduType: "ДПО", programType: "Профессиональная переподготовка", industry: "Здравоохранение", dot: "Нет", onsite: "Да", eduRequirements: ["master", "specialist"] },
-        { id: 15, title: "Документационное обеспечение управления", desc: "Делопроизводство и архивное дело, 32 часа.", price: 0, profession: "Делопроизводитель", competencies: "Документооборот", categories: "Взрослые, Безработные", form: "Заочно", ovz: "Да", free: true, duration: "32 часа", lectures: 16, practices: 16, hours: 32, theoretical: "ГОСТ Р 7.0.97-2016.", topics: ["Оформление", "Архив"], know: ["Правила", "Стандарты"], skills: ["Составлять документы"], eduType: "ДПО", programType: "Повышение квалификации", industry: "Сфера услуг", dot: "Да", onsite: "Нет", eduRequirements: ["secondary"] },
-        { id: 16, title: "3D-моделирование", desc: "Blender и 3Ds Max, 68 часов.", price: 16000, profession: "3D-моделлер", competencies: "3D-графика", categories: "Студенты, Самозанятые", form: "Очно-заочно", ovz: "Нет", free: false, duration: "68 часов", lectures: 20, practices: 48, hours: 68, theoretical: "Полигональное моделирование.", topics: ["Blender", "Max"], know: ["Топология", "Текстуры"], skills: ["Моделировать", "Анимировать"], eduType: "ДПО", programType: "Повышение квалификации", industry: "Творчество и дизайн", dot: "Да", onsite: "Нет", eduRequirements: ["secondary"] },
-        { id: 17, title: "Маркетинг и реклама", desc: "Digital-маркетинг, 44 часа.", price: 8200, profession: "Маркетолог", competencies: "Маркетинговые коммуникации", categories: "Студенты, ИП", form: "Очно-заочно", ovz: "Нет", free: false, duration: "44 часа", lectures: 22, practices: 22, hours: 44, theoretical: "SMM, контекст.", topics: ["Таргет", "SEO"], know: ["Инструменты"], skills: ["Настраивать рекламу"], eduType: "ДПО", programType: "Повышение квалификации", industry: "Сфера услуг", dot: "Да", onsite: "Нет", eduRequirements: ["bachelor"] },
-        { id: 18, title: "Педагогика дополнительного образования", desc: "Методика преподавания, 36 часов.", price: 0, profession: "Педагог доп. образования", competencies: "Образовательные методики", categories: "Взрослые, Иные", form: "Заочно", ovz: "Да", free: true, duration: "36 часов", lectures: 18, practices: 18, hours: 36, theoretical: "Педагогика, психология.", topics: ["Методики", "Планирование"], know: ["ФГОС", "Возрастные особенности"], skills: ["Разрабатывать программы"], eduType: "ДПО", programType: "Профессиональная переподготовка", industry: "Образование", dot: "Да", onsite: "Нет", eduRequirements: ["bachelor"] },
-        { id: 19, title: "Английский язык для профессиональной деятельности", desc: "Технический перевод, 48 часов.", price: 5500, profession: "Переводчик", competencies: "Профессиональный английский", categories: "Студенты, Взрослые", form: "Очно-заочно", ovz: "Нет", free: false, duration: "48 часов", lectures: 30, practices: 18, hours: 48, theoretical: "Специализированная лексика.", topics: ["Деловая переписка", "Перевод"], know: ["Терминология", "Грамматика"], skills: ["Переводить тексты", "Вести переговоры"], eduType: "ДПО", programType: "Повышение квалификации", industry: "Образование", dot: "Да", onsite: "Нет", eduRequirements: ["secondary"] }
+        { id: 0, title: "Основы программирования на Python", desc: "Курс для начинающих, 40 часов, сертификат.", price: 12000, profession: "Программист", competencies: "Разработка программного обеспечения", categories: "Студенты, Взрослые", form: "Очно-заочно", ovz: "Нет", free: false, duration: "40 часов", lectures: 20, practices: 20, hours: 40, theoretical: "Изучение синтаксиса Python, основных библиотек и написание простых скриптов.", topics: ["Введение в Python", "Управляющие конструкции", "Функции и модули", "Работа с файлами"], know: ["Основы синтаксиса Python", "Типы данных", "Принципы ООП"], skills: ["Писать простые программы", "Работать с библиотеками", "Отлаживать код"], eduType: "ДПО", programType: "Повышение квалификации", industry: "Информационные технологии", dot: "Да", onsite: "Нет", eduRequirements: ["secondary"], status: 'approved'  },
+        { id: 1, title: "Электромонтаж и наладка оборудования", desc: "Практический курс, 72 часа.", price: 8500, profession: "Электромонтажник", competencies: "Электромонтажные работы", categories: "Взрослые, Безработные", form: "Очно", ovz: "Да", free: false, duration: "72 часа", lectures: 12, practices: 60, hours: 72, theoretical: "Монтаж электрооборудования, чтение схем, техника безопасности.", topics: ["Основы электротехники", "Монтаж проводки", "Наладка щитов"], know: ["Правила устройства электроустановок", "Типы кабелей"], skills: ["Выполнять монтаж", "Проводить диагностику"], eduType: "ПО", programType: "Профессиональная подготовка", industry: "Строительство", dot: "Нет", onsite: "Да", eduRequirements: ["vocational"], status: 'approved'  },
+        { id: 2, title: "Поварское дело", desc: "Обучение профессиональному поварскому мастерству.", price: 0, profession: "Повар", competencies: "Поварское искусство", categories: "Лица старше 50, Безработные", form: "Очно", ovz: "Да", free: true, duration: "48 часов", lectures: 10, practices: 38, hours: 48, theoretical: "Технологии приготовления блюд, санитария.", topics: ["Горячие блюда", "Соусы", "Десерты"], know: ["Рецептуры", "Нормы СанПиН"], skills: ["Готовить блюда", "Работать с оборудованием"], eduType: "ПО", programType: "Профессиональная подготовка", industry: "Производство пищевых продуктов", dot: "Нет", onsite: "Да", eduRequirements: ["basic"], status: 'approved'  },
+        { id: 3, title: "Web-дизайн и разработка", desc: "Современные технологии, 60 часов.", price: 15000, profession: "Web-дизайнер", competencies: "Дизайн интерфейсов", categories: "Студенты, Самозанятые", form: "Очно-заочно", ovz: "Нет", free: false, duration: "60 часов", lectures: 24, practices: 36, hours: 60, theoretical: "HTML, CSS, JavaScript, Figma.", topics: ["Верстка", "Адаптивный дизайн", "Основы UX"], know: ["Семантика HTML5", "Flexbox"], skills: ["Создавать сайты", "Прототипировать"], eduType: "ДПО", programType: "Повышение квалификации", industry: "Информационные технологии", dot: "Да", onsite: "Нет", eduRequirements: ["secondary"], status: 'approved'  },
+        { id: 4, title: "Сварочные технологии", desc: "Ручная дуговая сварка, 48 часов.", price: 9200, profession: "Сварщик", competencies: "Сварочное производство", categories: "Взрослые, ИП", form: "Очно", ovz: "Нет", free: false, duration: "48 часов", lectures: 8, practices: 40, hours: 48, theoretical: "Технология ручной дуговой сварки.", topics: ["Оборудование", "Техника безопасности", "Швы"], know: ["Типы электродов", "Режимы сварки"], skills: ["Варить стыковые швы", "Зачищать"], eduType: "ПО", programType: "Профессиональная подготовка", industry: "Машиностроение", dot: "Нет", onsite: "Да", eduRequirements: ["vocational"], status: 'approved'  },
+        { id: 5, title: "Медицинский массаж", desc: "Классический и лечебный массаж, 120 часов.", price: 22000, profession: "Медицинская сестра", competencies: "Медицинский массаж", categories: "Взрослые, Иные", form: "Очно", ovz: "Да", free: false, duration: "120 часов", lectures: 30, practices: 90, hours: 120, theoretical: "Анатомия, физиология, техники массажа.", topics: ["Классический массаж", "Лечебный"], know: ["Мышечные группы", "Показания"], skills: ["Выполнять массаж", "Оценивать состояние"], eduType: "ДПО", programType: "Профессиональная переподготовка", industry: "Здравоохранение", dot: "Нет", onsite: "Да", eduRequirements: ["bachelor"], status: 'approved'  },
+        { id: 6, title: "Бухгалтерский учёт и налогообложение", desc: "1С:Бухгалтерия, налоги, 36 часов.", price: 7500, profession: "Бухгалтер", competencies: "Бухгалтерский учёт", categories: "Студенты, Взрослые", form: "Заочно", ovz: "Нет", free: false, duration: "36 часов", lectures: 18, practices: 18, hours: 36, theoretical: "Основы бухучёта, 1С.", topics: ["План счетов", "Налоги", "Отчётность"], know: ["Законодательство", "Проводки"], skills: ["Вести учёт в 1С", "Составлять баланс"], eduType: "ДПО", programType: "Повышение квалификации", industry: "Сфера услуг", dot: "Да", onsite: "Нет", eduRequirements: ["bachelor"], status: 'approved'  },
+        { id: 7, title: "Ландшафтный дизайн", desc: "Проектирование садов и парков, 54 часа.", price: 11000, profession: "Ландшафтный архитектор", competencies: "Ландшафтное проектирование", categories: "Самозанятые, ИП", form: "Очно-заочно", ovz: "Нет", free: false, duration: "54 часа", lectures: 20, practices: 34, hours: 54, theoretical: "Основы композиции, дендрология.", topics: ["Стили садов", "Растения", "Проект"], know: ["Виды растений", "Дренаж"], skills: ["Создавать проект", "Подбирать растения"], eduType: "ДПО", programType: "Повышение квалификации", industry: "Творчество и дизайн", dot: "Да", onsite: "Нет", eduRequirements: ["secondary"], status: 'approved'  },
+        { id: 8, title: "Ремонт и обслуживание автомобилей", desc: "Диагностика и ремонт, 80 часов.", price: 6800, profession: "Автомеханик", competencies: "Ремонт автомобилей", categories: "Взрослые, Безработные", form: "Очно", ovz: "Нет", free: false, duration: "80 часов", lectures: 10, practices: 70, hours: 80, theoretical: "Устройство ДВС, ходовой.", topics: ["Двигатель", "Трансмиссия"], know: ["Диагностика", "Инструмент"], skills: ["Ремонтировать", "Проводить ТО"], eduType: "ПО", programType: "Профессиональная подготовка", industry: "Машиностроение", dot: "Нет", onsite: "Да", eduRequirements: ["vocational"], status: 'approved'  },
+        { id: 9, title: "IT-безопасность", desc: "Кибербезопасность и защита данных, 64 часа.", price: 18000, profession: "Специалист по кибербезопасности", competencies: "Защита информации", categories: "Студенты, ИП", form: "Очно-заочно", ovz: "Нет", free: false, duration: "64 часа", lectures: 32, practices: 32, hours: 64, theoretical: "Сетевые атаки, криптография.", topics: ["Файерволы", "Шифрование"], know: ["Виды угроз", "Политики безопасности"], skills: ["Настраивать защиту", "Анализировать инциденты"], eduType: "ДПО", programType: "Повышение квалификации", industry: "Информационные технологии", dot: "Да", onsite: "Нет", eduRequirements: ["bachelor"], status: 'approved'  },
+        { id: 10, title: "Графический дизайн", desc: "Adobe Photoshop и Illustrator, 48 часов.", price: 10500, profession: "Графический дизайнер", competencies: "Графический дизайн", categories: "Студенты, Самозанятые", form: "Очно", ovz: "Нет", free: false, duration: "48 часов", lectures: 16, practices: 32, hours: 48, theoretical: "Композиция, работа с цветом.", topics: ["Photoshop", "Illustrator"], know: ["Инструменты", "Тренды"], skills: ["Рисовать", "Верстать макеты"], eduType: "ДПО", programType: "Повышение квалификации", industry: "Творчество и дизайн", dot: "Да", onsite: "Нет", eduRequirements: ["secondary"], status: 'approved'  },
+        { id: 11, title: "Строительство и отделка", desc: "Технологии внутренней отделки, 56 часов.", price: 7800, profession: "Строитель-отделочник", competencies: "Отделочные работы", categories: "Безработные, Иные", form: "Очно", ovz: "Да", free: false, duration: "56 часов", lectures: 12, practices: 44, hours: 56, theoretical: "Штукатурка, плитка.", topics: ["Штукатурка", "Плитка"], know: ["Материалы", "Инструмент"], skills: ["Штукатурить", "Класть плитку"], eduType: "ПО", programType: "Профессиональная подготовка", industry: "Строительство", dot: "Нет", onsite: "Да", eduRequirements: ["basic"], status: 'approved'  },
+        { id: 12, title: "Технологии молочного производства", desc: "Современное оборудование, 40 часов.", price: 0, profession: "Технолог пищевой промышленности", competencies: "Молочное производство", categories: "Взрослые, Безработные", form: "Очно", ovz: "Да", free: true, duration: "40 часов", lectures: 20, practices: 20, hours: 40, theoretical: "Технология сыра, масла.", topics: ["Сыроделие", "Маслоделие"], know: ["Рецептуры", "Оборудование"], skills: ["Варить сыр", "Контролировать качество"], eduType: "ПО", programType: "Профессиональная подготовка", industry: "Производство пищевых продуктов", dot: "Нет", onsite: "Да", eduRequirements: ["basic"], status: 'approved'  },
+        { id: 13, title: "Туризм и гостиничное дело", desc: "Менеджмент в туризме, 50 часов.", price: 9000, profession: "Менеджер по туризму", competencies: "Туристический менеджмент", categories: "Студенты, ИП", form: "Заочно", ovz: "Нет", free: false, duration: "50 часов", lectures: 25, practices: 25, hours: 50, theoretical: "Маркетинг, бронирование.", topics: ["Гостиницы", "Туры"], know: ["Системы бронирования"], skills: ["Составлять туры"], eduType: "ДПО", programType: "Повышение квалификации", industry: "Туризм", dot: "Да", onsite: "Нет", eduRequirements: ["bachelor"], status: 'approved'  },
+        { id: 14, title: "Фармацевтика", desc: "Основы фармакологии и отпуск лекарств, 100 часов.", price: 25000, profession: "Фармацевт", competencies: "Фармацевтическая деятельность", categories: "Взрослые, Иные", form: "Очно", ovz: "Да", free: false, duration: "100 часов", lectures: 40, practices: 60, hours: 100, theoretical: "Лекарственные средства, рецептура.", topics: ["Фармакология", "Отпуск"], know: ["Препараты", "Дозировки"], skills: ["Консультировать", "Отпускать"], eduType: "ДПО", programType: "Профессиональная переподготовка", industry: "Здравоохранение", dot: "Нет", onsite: "Да", eduRequirements: ["master", "specialist"], status: 'approved'  },
+        { id: 15, title: "Документационное обеспечение управления", desc: "Делопроизводство и архивное дело, 32 часа.", price: 0, profession: "Делопроизводитель", competencies: "Документооборот", categories: "Взрослые, Безработные", form: "Заочно", ovz: "Да", free: true, duration: "32 часа", lectures: 16, practices: 16, hours: 32, theoretical: "ГОСТ Р 7.0.97-2016.", topics: ["Оформление", "Архив"], know: ["Правила", "Стандарты"], skills: ["Составлять документы"], eduType: "ДПО", programType: "Повышение квалификации", industry: "Сфера услуг", dot: "Да", onsite: "Нет", eduRequirements: ["secondary"], status: 'approved'  },
+        { id: 16, title: "3D-моделирование", desc: "Blender и 3Ds Max, 68 часов.", price: 16000, profession: "3D-моделлер", competencies: "3D-графика", categories: "Студенты, Самозанятые", form: "Очно-заочно", ovz: "Нет", free: false, duration: "68 часов", lectures: 20, practices: 48, hours: 68, theoretical: "Полигональное моделирование.", topics: ["Blender", "Max"], know: ["Топология", "Текстуры"], skills: ["Моделировать", "Анимировать"], eduType: "ДПО", programType: "Повышение квалификации", industry: "Творчество и дизайн", dot: "Да", onsite: "Нет", eduRequirements: ["secondary"], status: 'approved'  },
+        { id: 17, title: "Маркетинг и реклама", desc: "Digital-маркетинг, 44 часа.", price: 8200, profession: "Маркетолог", competencies: "Маркетинговые коммуникации", categories: "Студенты, ИП", form: "Очно-заочно", ovz: "Нет", free: false, duration: "44 часа", lectures: 22, practices: 22, hours: 44, theoretical: "SMM, контекст.", topics: ["Таргет", "SEO"], know: ["Инструменты"], skills: ["Настраивать рекламу"], eduType: "ДПО", programType: "Повышение квалификации", industry: "Сфера услуг", dot: "Да", onsite: "Нет", eduRequirements: ["bachelor"], status: 'approved'  },
+        { id: 18, title: "Педагогика дополнительного образования", desc: "Методика преподавания, 36 часов.", price: 0, profession: "Педагог доп. образования", competencies: "Образовательные методики", categories: "Взрослые, Иные", form: "Заочно", ovz: "Да", free: true, duration: "36 часов", lectures: 18, practices: 18, hours: 36, theoretical: "Педагогика, психология.", topics: ["Методики", "Планирование"], know: ["ФГОС", "Возрастные особенности"], skills: ["Разрабатывать программы"], eduType: "ДПО", programType: "Профессиональная переподготовка", industry: "Образование", dot: "Да", onsite: "Нет", eduRequirements: ["bachelor"], status: 'approved'  },
+        { id: 19, title: "Английский язык для профессиональной деятельности", desc: "Технический перевод, 48 часов.", price: 5500, profession: "Переводчик", competencies: "Профессиональный английский", categories: "Студенты, Взрослые", form: "Очно-заочно", ovz: "Нет", free: false, duration: "48 часов", lectures: 30, practices: 18, hours: 48, theoretical: "Специализированная лексика.", topics: ["Деловая переписка", "Перевод"], know: ["Терминология", "Грамматика"], skills: ["Переводить тексты", "Вести переговоры"], eduType: "ДПО", programType: "Повышение квалификации", industry: "Образование", dot: "Да", onsite: "Нет", eduRequirements: ["secondary"], status: 'approved'  }
     ];
 
     let modules = [];
@@ -695,6 +743,7 @@
     let currentPage = 1;
     let cart = JSON.parse(localStorage.getItem('cartModules')) || [];
     let currentUser = null;
+    let allUsers = []; // массив email'ов всех зарегистрированных пользователей
 
 let professionsList = [];
 let userRoleMap = {}; // { email: 'copp' | 'teacher' }
@@ -786,6 +835,9 @@ function updateProfessionDatalist() {
             modules.push({ id: parseInt(doc.id), ...doc.data() });
         });
         modules.sort((a, b) => a.id - b.id);
+        modules.forEach(mod => {
+    if (!mod.status) mod.status = 'approved';
+});
         filteredModules = [...modules];
     }
 
@@ -801,7 +853,23 @@ function updateProfessionDatalist() {
     async function saveModuleToFirestore(mod) {
         await db.collection('modules').doc(String(mod.id)).set(mod);
     }
-
+    async function updateUserInUsersCollection(user) {
+    if (!user || !user.email) return;
+    const userRef = db.collection('users').doc(user.email);
+    const doc = await userRef.get();
+    if (!doc.exists) {
+        await userRef.set({ email: user.email, lastLogin: firebase.firestore.FieldValue.serverTimestamp() });
+    } else {
+        await userRef.update({ lastLogin: firebase.firestore.FieldValue.serverTimestamp() });
+    }
+}
+async function loadAllUsers() {
+    const snapshot = await db.collection('users').get();
+    allUsers = [];
+    snapshot.forEach(doc => {
+        allUsers.push(doc.id); // doc.id – это email
+    });
+}
     // ---------- КОРЗИНА ----------
     function updateCartBadge() {
         const badge = document.getElementById('cart-badge');
@@ -855,6 +923,145 @@ document.querySelectorAll('.cart-download').forEach(btn => {
 
     function openCartModal() { document.getElementById('cart-modal').classList.add('show'); renderCartModal(); }
     function closeCartModal() { document.getElementById('cart-modal').classList.remove('show'); }
+    function showAdminPanel() {
+    document.getElementById('catalog-view').style.display = 'none';
+    document.getElementById('module-detail').classList.remove('active');
+    document.getElementById('admin-panel').style.display = 'block';
+    history.pushState(null, '', window.location.pathname);
+    switchToUsersTab(); // по умолчанию – пользователи
+}
+
+
+function hideAdminPanel() {
+    document.getElementById('admin-panel').style.display = 'none';
+    document.getElementById('catalog-view').style.display = 'block';
+    showCatalog();
+}
+function switchToUsersTab() {
+    document.getElementById('admin-users-table').style.display = 'block';
+    document.getElementById('admin-modules-table').style.display = 'none';
+    document.getElementById('tab-users').style.background = '#15315f';
+    document.getElementById('tab-modules').style.background = '#f07d00';
+    renderAdminUsers();
+}
+
+function switchToModulesTab() {
+    document.getElementById('admin-users-table').style.display = 'none';
+    document.getElementById('admin-modules-table').style.display = 'block';
+    document.getElementById('tab-modules').style.background = '#d06e00';
+    document.getElementById('tab-users').style.background = '#1E4082';
+    renderAdminModules();
+}
+
+function renderAdminModules() {
+    const container = document.getElementById('admin-modules-table');
+    if (!container) return;
+    const pendingModules = modules.filter(m => m.status === 'pending');
+    if (pendingModules.length === 0) {
+        container.innerHTML = '<p>Нет модулей на проверке.</p>';
+        return;
+    }
+    let html = `<table class="admin-table">
+        <thead><tr><th>Название</th><th>Автор</th><th>Действия</th></tr></thead>
+        <tbody>`;
+    pendingModules.forEach(mod => {
+        html += `<tr>
+            <td>${mod.title}</td>
+            <td>${mod.createdBy || '—'}</td>
+            <td>
+                <button class="btn-detail" style="margin-right:5px;" onclick="viewModuleFromAdmin(${mod.id})">Просмотреть</button>
+                <button class="admin-save-btn" style="margin-right:5px;" onclick="approveModule(${mod.id})">Одобрить</button>
+                <button class="btn-delete" onclick="rejectModule(${mod.id})">Отклонить</button>
+            </td>
+        </tr>`;
+    });
+    html += `</tbody></table>`;
+    container.innerHTML = html;
+}
+
+async function approveModule(moduleId) {
+    await db.collection('modules').doc(String(moduleId)).update({ status: 'approved' });
+    await loadModulesFromFirestore();
+    filteredModules = [...modules];
+    if (document.getElementById('catalog-view').style.display !== 'none') {
+        renderCards();
+        renderPagination();
+    }
+    renderAdminModules();
+    alert('Модуль одобрен и опубликован');
+}
+
+async function rejectModule(moduleId) {
+    if (!confirm('Удалить модуль навсегда?')) return;
+    await db.collection('modules').doc(String(moduleId)).delete();
+    await loadModulesFromFirestore();
+    filteredModules = [...modules];
+    if (document.getElementById('catalog-view').style.display !== 'none') {
+        renderCards();
+        renderPagination();
+    }
+    renderAdminModules();
+    alert('Модуль отклонён и удалён');
+}
+function viewModuleFromAdmin(id) {
+    sessionStorage.setItem('fromAdmin', 'true');
+    document.getElementById('admin-panel').style.display = 'none';
+    document.getElementById('catalog-view').style.display = 'block';
+    showModuleDetail(id);
+}
+
+
+function renderAdminUsers() {
+    const container = document.getElementById('admin-users-table');
+    if (!container) return;
+    let html = `<table class="admin-table">
+        <thead><tr><th>Email</th><th>Текущая роль</th><th>Новая роль</th><th></th></tr></thead>
+        <tbody>`;
+    allUsers.forEach(email => {
+        const currentRole = userRoleMap[email] || 'нет роли';
+        const options = ['нет роли', 'copp', 'teacher'];
+        html += `<tr>
+            <td>${email}</td>
+            <td>${currentRole}</td>
+            <td>
+                <select id="role-select-${email.replace(/[^a-z0-9]/gi, '_')}">
+                    ${options.map(opt => `<option value="${opt}" ${opt === currentRole ? 'selected' : ''}>${opt}</option>`).join('')}
+                </select>
+            </td>
+            <td><button class="admin-save-btn" onclick="updateUserRole('${email}', this)">Сохранить</button></td>
+        </tr>`;
+    });
+    html += `</tbody></table>`;
+    container.innerHTML = html;
+}
+
+async function updateUserRole(email, btn) {
+    const selectId = `role-select-${email.replace(/[^a-z0-9]/gi, '_')}`;
+    const select = document.getElementById(selectId);
+    if (!select) return;
+    const newRole = select.value;
+    const roleRef = db.collection('userRoles').doc(email);
+    try {
+        if (newRole === 'нет роли') {
+            await roleRef.delete();
+            delete userRoleMap[email];
+        } else {
+            await roleRef.set({ role: newRole });
+            userRoleMap[email] = newRole;
+        }
+        const row = btn.closest('tr');
+        row.cells[1].textContent = newRole === 'нет роли' ? 'нет роли' : newRole;
+        if (email === currentUser) {
+            updateCreateButtonVisibility();
+            if (document.getElementById('catalog-view').style.display !== 'none') {
+                renderCards();
+            }
+        }
+        alert('Роль обновлена');
+    } catch (error) {
+        alert('Ошибка: ' + error.message);
+    }
+}
 
     // ---------- АВТОРИЗАЦИЯ ----------
     function getCurrentUserRole() {
@@ -880,6 +1087,10 @@ document.querySelectorAll('.cart-download').forEach(btn => {
             userBlock.style.display = 'none';
         }
         updateCreateButtonVisibility();
+        const adminLink = document.getElementById('admin-link');
+if (adminLink) {
+    adminLink.style.display = (getCurrentUserRole() === 'copp') ? 'inline' : 'none';
+}
     }
 
     function updateCreateButtonVisibility() {
@@ -899,6 +1110,7 @@ document.querySelectorAll('.cart-download').forEach(btn => {
         if (user) {
             currentUser = user.email;
             sessionStorage.setItem('currentUser', currentUser);
+             await updateUserInUsersCollection(user); 
         } else {
             currentUser = null;
             sessionStorage.removeItem('currentUser');
@@ -954,9 +1166,12 @@ document.querySelectorAll('.cart-download').forEach(btn => {
             const canEdit = (role === 'copp') || (role === 'teacher' && isOwner);
             const editBtn = canEdit ? `<button class="btn-edit" data-id="${mod.id}">Редактировать</button>` : '';
             const deleteBtn = canEdit ? `<button class="btn-delete" data-id="${mod.id}">Удалить</button>` : '';
+            const pendingBadge = (mod.status === 'pending' && (role === 'copp' || (role === 'teacher' && isOwner)))
+    ? '<span style="color: red; font-size: 12px; margin-left: 8px;">⏳ На проверке</span>' 
+    : '';
                         html += `
                 <div class="card">
-                    <div class="card-title">${mod.title}</div>
+                    <div class="card-title">${mod.title} ${pendingBadge}</div>
                     <div class="card-desc">${mod.desc}</div>
                     <div class="card-footer">
                         ${priceDisplay}
@@ -1047,7 +1262,7 @@ document.querySelectorAll('.cart-download').forEach(btn => {
         const dotFilter = document.getElementById('filter-dot').value;
         const onsiteFilter = document.getElementById('filter-onsite').value;
         const checkedEdu = Array.from(document.querySelectorAll('#edu-checkboxes input:checked')).map(cb => cb.value);
-
+const userRole = getCurrentUserRole();
         filteredModules = modules.filter(mod => {
             if (nameFilter && mod.title !== nameFilter) return false;
             if (professionFilter && mod.profession !== professionFilter) return false;
@@ -1068,6 +1283,7 @@ document.querySelectorAll('.cart-download').forEach(btn => {
             if (checkedEdu.length > 0 && mod.eduRequirements) {
                 if (!mod.eduRequirements.some(r => checkedEdu.includes(r))) return false;
             }
+            if (userRole !== 'copp' && mod.status !== 'approved') return false;
             return true;
         });
         currentPage = 1;
@@ -1264,10 +1480,12 @@ document.getElementById('btn-edit-mode').style.display = canEdit ? 'inline-block
                 await addProfession(document.getElementById('new-profession').value);
         const maxId = modules.length > 0 ? Math.max(...modules.map(m => m.id)) : 0;
         const newId = maxId + 1;
+        const role = getCurrentUserRole();
         const newModule = {
             id: newId,
             title,
             createdBy: currentUser,
+            status: (role === 'copp') ? 'approved' : 'pending',
             desc: document.getElementById('new-desc').value,
             price: parseInt(document.getElementById('new-price').value) || 0,
             profession: document.getElementById('new-profession').value,
@@ -1327,20 +1545,59 @@ function downloadModuleDocx(mod) {
         await loadModulesFromFirestore();
                 await seedUserRoles();
         await loadUserRoles();
+        await loadAllUsers();
+        // автоматически добавить в users всех, кто есть в userRoles
+for (const email of Object.keys(userRoleMap)) {
+    if (!allUsers.includes(email)) {
+        await db.collection('users').doc(email).set({ email: email, lastLogin: firebase.firestore.FieldValue.serverTimestamp() });
+    }
+}
           await seedInitialProfessions();
         await loadProfessions();
         filteredModules = [...modules];
 
         // Определяем текущего пользователя сразу (если сессия жива)
         currentUser = auth.currentUser ? auth.currentUser.email : null;
+        applyFilters();
         updateAuthUI(); // покажет или auth-screen, или main-app
 
         updateCartBadge();
         initAccessibility();
 
         document.getElementById('btn-find').addEventListener('click', applyFilters);
-        document.getElementById('home-link').addEventListener('click', (e) => { e.preventDefault(); showCatalog(); });
-        document.getElementById('back-to-catalog').addEventListener('click', showCatalog);
+      document.getElementById('home-link').addEventListener('click', (e) => {
+    e.preventDefault();
+    if (document.getElementById('admin-panel').style.display === 'block') {
+        hideAdminPanel();
+    } else {
+        showCatalog();
+    }
+});
+
+document.getElementById('admin-link').addEventListener('click', (e) => {
+    e.preventDefault();
+    showAdminPanel();
+});
+
+document.getElementById('back-from-admin').addEventListener('click', (e) => {
+    e.preventDefault();
+    hideAdminPanel();
+});
+document.getElementById('tab-users').addEventListener('click', switchToUsersTab);
+document.getElementById('tab-modules').addEventListener('click', switchToModulesTab);
+
+        document.getElementById('back-to-catalog').addEventListener('click', (e) => {
+    e.preventDefault();
+    if (sessionStorage.getItem('fromAdmin') === 'true') {
+        sessionStorage.removeItem('fromAdmin');
+        document.getElementById('admin-panel').style.display = 'block';
+        document.getElementById('catalog-view').style.display = 'none';
+        document.getElementById('module-detail').classList.remove('active');
+        switchToModulesTab();
+    } else {
+        showCatalog();
+    }
+});
         document.getElementById('cart-icon-wrapper').addEventListener('click', openCartModal);
         document.getElementById('close-cart').addEventListener('click', closeCartModal);
         document.getElementById('close-create-module').addEventListener('click', closeCreateModuleModal);
