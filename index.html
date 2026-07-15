@@ -26,12 +26,14 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: 'Segoe UI', Arial, sans-serif;
-            background-color: #f5f5f5;
-            min-height: 100vh;
-            color: #333;
-            transition: zoom 0.2s, filter 0.2s;
-        }
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background-color: #f5f5f5;
+    min-height: 100vh;
+    color: #333;
+    transition: zoom 0.2s, filter 0.2s;
+    display: flex;
+    flex-direction: column;
+}
         body.accessibility-mode { zoom: 1.2; filter: contrast(1.2); }
 
         /* ЭКРАН АВТОРИЗАЦИИ */
@@ -102,7 +104,11 @@
         .auth-right p { color: #555; font-size: 16px; }
 
         /* ОСНОВНОЙ КОНТЕНТ (скрыт до авторизации) */
-        #main-app { display: none; }
+        #main-app {
+    display: none;
+    flex-direction: column;
+    min-height: 100vh;
+}
 
         /* старые стили без изменений (сокращены для экономии места) */
         .header {
@@ -570,6 +576,60 @@
     transition: background-color 0.2s;
 }
 .admin-save-btn:hover { background-color: #15315f; }
+/* Футер */
+.site-footer {
+    background-color: #1E4082;
+    color: #ffffff;
+    padding: 30px 40px 20px;
+    font-size: 14px;
+    line-height: 1.5;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.15);
+    position: relative;
+    overflow: hidden;
+    margin-top: auto; /* это прижмёт футер книзу */
+}
+.site-footer::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: url('texture.svg');
+    background-repeat: repeat-x;
+    opacity: 0.15; /* едва заметно, можно менять 0.1–0.3 */
+    pointer-events: none;
+}
+.footer-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+.footer-left {
+    flex: 1 1 auto;
+}
+.footer-right {
+    flex: 0 0 auto;
+    margin-left: auto;
+    text-align: right;
+}
+.footer-copyright {
+    text-align: center;
+    margin-top: 20px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255,255,255,0.2);
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+}
+.footer-copyright p {
+    margin: 0;
+    opacity: 0.9;
+    font-size: 13px;
+}
     </style>
 </head>
 <body>
@@ -723,6 +783,21 @@
                 <div id="create-module-form"></div>
             </div>
         </div>
+                <!-- Футер -->
+        <footer class="site-footer">
+    <div class="footer-inner">
+        <div class="footer-left">
+            <p>644122, Омская область, г. Омск, ул. Волховстроя, 5</p>
+            <p>8.00 – 17.00 (понедельник – пятница)</p>
+        </div>
+        <div class="footer-right">
+            <p>Разработчик: А. Р.</p>
+        </div>
+    </div>
+    <div class="footer-copyright">
+        <p>© 2026, Центр опережающей профессиональной подготовки, Омская область</p>
+    </div>
+</footer>
     </div><!-- конец main-app -->
 
     <script>
@@ -1087,7 +1162,7 @@ async function updateUserRole(email, btn) {
         const userBlock = document.getElementById('user-block');
         if (currentUser) {
             authScreen.style.display = 'none';
-            mainApp.style.display = 'block';
+            mainApp.style.display = 'flex';
             userBlock.style.display = 'flex';
             document.getElementById('username-display').textContent = currentUser;
             if (filteredModules.length > 0) {
