@@ -764,8 +764,7 @@
                 <button class="btn-include" id="btn-include">ВКЛЮЧИТЬ МОДУЛЬ В ПРОГРАММУ</button>
                 <button class="btn-include" id="btn-download-detail" style="margin-left: 10px;">Скачать программу (DOCX)</button>
                 <button class="btn-edit-mode" id="btn-edit-mode" style="display: none;">Редактировать модуль</button>
-                <button class="btn-include" id="btn-save-edit" style="display: none;">Сохранить изменения</button>
-                <button class="btn-edit-mode" id="btn-cancel-edit" style="display: none;">Отмена</button>
+                
             </div>
             <div class="module-info">
                 <div class="left">
@@ -1429,8 +1428,7 @@ const userRole = getCurrentUserRole();
 const isOwner = (mod.createdBy === currentUser);
 const canEdit = (role === 'copp') || (role === 'teacher' && isOwner);
 document.getElementById('btn-edit-mode').style.display = canEdit ? 'inline-block' : 'none';
-        document.getElementById('btn-save-edit').style.display = 'none';
-        document.getElementById('btn-cancel-edit').style.display = 'none';
+        
         document.getElementById('btn-include').style.display = 'inline-block';
         
 
@@ -1486,8 +1484,7 @@ function showModuleDetailForEdit(id) {
     document.getElementById('edit-form-container').style.display = 'block';
     document.getElementById('btn-edit-mode').style.display = 'none';
     document.getElementById('btn-include').style.display = 'none';
-    document.getElementById('btn-save-edit').style.display = 'inline-block';
-    document.getElementById('btn-cancel-edit').style.display = 'inline-block';
+    
 
     const forms = ["Очно","Очно-заочно","Заочно"];
     const eduTypes = ["ДПО","ПО"];
@@ -1611,14 +1608,15 @@ function showModuleDetailForEdit(id) {
                 <option value="Центральный" ${mod.district === 'Центральный' ? 'selected' : ''}>Центральный</option>
             </select>            
 <div class="form-actions">
-                <button class="btn-include" id="btn-save-edit">Сохранить изменения</button>
-                <button class="btn-edit-mode" id="btn-cancel-edit">Отмена</button>
+                <button class="btn-include" id="edit-save-btn">Сохранить изменения</button>
+<button class="btn-edit-mode" id="edit-cancel-btn">Отмена</button>
             </div>
         </div>`;
 
     // Логика отключения поля стоимости при "Бесплатно"
     const editFreeSelect = document.getElementById('edit-free');
-    const editPriceInput = document.getElementById('edit-price');
+const editPriceInput = document.getElementById('edit-price');
+if (editFreeSelect && editPriceInput) {
     function toggleEditPrice() {
         if (editFreeSelect.value === 'true') {
             editPriceInput.value = '0';
@@ -1628,10 +1626,11 @@ function showModuleDetailForEdit(id) {
         }
     }
     editFreeSelect.addEventListener('change', toggleEditPrice);
-    toggleEditPrice(); // начальное состояние
+    toggleEditPrice();
+}
 
-    document.getElementById('btn-save-edit').onclick = () => saveModuleChanges(mod.id);
-    document.getElementById('btn-cancel-edit').onclick = () => showModuleDetail(mod.id);
+    document.getElementById('edit-save-btn').onclick = () => saveModuleChanges(mod.id);
+document.getElementById('edit-cancel-btn').onclick = () => showModuleDetail(mod.id);
     updateProfessionDatalist();
 }
     async function saveModuleChanges(id) {
