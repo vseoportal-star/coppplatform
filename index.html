@@ -5,6 +5,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
+
 <script>
   const firebaseConfig = {
     apiKey: "AIzaSyChcOmevEdVtQWtlF_sOuvi6tMhUxqyNSA",
@@ -18,6 +19,7 @@
   firebase.initializeApp(firebaseConfig);
   const auth = firebase.auth();
   const db = firebase.firestore();
+
 </script>
 <head>
     <meta charset="UTF-8">
@@ -629,6 +631,19 @@
     margin: 0;
     opacity: 0.9;
     font-size: 13px;
+}
+.edit-form input::placeholder,
+.edit-form textarea::placeholder {
+    color: #999;
+    font-style: italic;
+    font-size: 13px;
+}
+.edit-form input:focus,
+.edit-form select:focus,
+.edit-form textarea:focus {
+    border-color: #1E4082;
+    box-shadow: 0 0 0 2px rgba(30,64,130,0.2);
+    outline: none;
 }
     </style>
     <link rel="icon" type="image/png" href="browser-logo.jpg">
@@ -1436,60 +1451,168 @@ document.getElementById('btn-edit-mode').style.display = canEdit ? 'inline-block
     }
 
     function buildCheckboxGroup(name, options, selectedValues) {
-        return options.map(opt => `<label><input type="checkbox" name="${name}" value="${opt}" ${selectedValues.includes(opt) ? 'checked' : ''}> ${opt}</label>`).join('');
-    }
+    return options.map(opt => {
+        const val = (typeof opt === 'object' && opt.value) ? opt.value : opt;
+        const label = (typeof opt === 'object' && opt.label) ? opt.label : opt;
+        return `<label><input type="checkbox" name="${name}" value="${val}" ${selectedValues.includes(val) ? 'checked' : ''}> ${label}</label>`;
+    }).join('');
+}
 
     function enterEditMode(mod) {
-        document.getElementById('detail-view').style.display = 'none';
-        document.getElementById('edit-form-container').style.display = 'block';
-        document.getElementById('btn-edit-mode').style.display = 'none';
-        document.getElementById('btn-include').style.display = 'none';
-        document.getElementById('btn-save-edit').style.display = 'inline-block';
-        document.getElementById('btn-cancel-edit').style.display = 'inline-block';
+    document.getElementById('detail-view').style.display = 'none';
+    document.getElementById('edit-form-container').style.display = 'block';
+    document.getElementById('btn-edit-mode').style.display = 'none';
+    document.getElementById('btn-include').style.display = 'none';
+    document.getElementById('btn-save-edit').style.display = 'inline-block';
+    document.getElementById('btn-cancel-edit').style.display = 'inline-block';
 
-       
-        const forms = ["Очно","Очно-заочно","Заочно"];
-        const eduTypes = ["ДПО","ПО"];
-        const programTypes = ["Профессиональная подготовка","Повышение квалификации","Профессиональная переподготовка"];
-        const industries = ["Нефтехимия","Машиностроение","Агропромышленный комплекс","Производство пищевых продуктов","Строительство","Сфера услуг","Туризм","Здравоохранение","Образование","Информационные технологии","Творчество и дизайн"];
-        const eduReqOptions = ["basic","secondary","vocational","incomplete_higher","bachelor","master","specialist","dpo","degree","any"];
+    const forms = ["Очно","Очно-заочно","Заочно"];
+    const eduTypes = ["ДПО","ПО"];
+    const programTypes = ["Профессиональная подготовка","Повышение квалификации","Профессиональная переподготовка"];
+    const industries = ["Нефтехимия","Машиностроение","Агропромышленный комплекс","Производство пищевых продуктов","Строительство","Сфера услуг","Туризм","Здравоохранение","Образование","Информационные технологии","Творчество и дизайн"];
+    const eduReqOptions = [
+    { value: "basic", label: "Основное общее" },
+    { value: "secondary", label: "Среднее общее" },
+    { value: "vocational", label: "Среднее профессиональное" },
+    { value: "incomplete_higher", label: "Неоконченное высшее" },
+    { value: "bachelor", label: "Высшее (бакалавриат)" },
+    { value: "master", label: "Высшее (магистратура)" },
+    { value: "specialist", label: "Высшее (специалитет)" },
+    { value: "dpo", label: "Дополнительное профессиональное" },
+    { value: "degree", label: "Ученая степень" },
+    { value: "any", label: "Не имеет значения" }
+];
 
-        document.getElementById('edit-form-container').innerHTML = `
-            <div class="edit-form">
-                <label>Название</label><input type="text" id="edit-title" value="${mod.title}">
-                <label>Описание</label><input type="text" id="edit-desc" value="${mod.desc}">
-                <label>Стоимость (0 = бесплатно)</label><input type="number" id="edit-price" value="${mod.price}">
-                 <label>Профессия</label><input type="text" id="edit-profession" value="${mod.profession}" list="professions-datalist" autocomplete="off">
-                <label>Компетенции</label><input type="text" id="edit-competencies" value="${mod.competencies}">
-                <label>Категории</label><input type="text" id="edit-categories" value="${mod.categories}">
-                <label>Форма обучения</label><select id="edit-form">${buildSelectOptions(forms, mod.form)}</select>
-                <label>ОВЗ</label><select id="edit-ovz"><option value="Да" ${mod.ovz==='Да'?'selected':''}>Да</option><option value="Нет" ${mod.ovz==='Нет'?'selected':''}>Нет</option></select>
-                <label>Бесплатно?</label><select id="edit-free"><option value="true" ${mod.free?'selected':''}>Да</option><option value="false" ${!mod.free?'selected':''}>Нет</option></select>
-                <label>Вид образования</label><select id="edit-eduType">${buildSelectOptions(eduTypes, mod.eduType || '')}</select>
-                <label>Тип программы</label><select id="edit-programType">${buildSelectOptions(programTypes, mod.programType || '')}</select>
-                <label>Отрасль</label><select id="edit-industry">${buildSelectOptions(industries, mod.industry || '')}</select>
-                <label>Возможность применения ДОТ</label><select id="edit-dot"><option value="Да" ${mod.dot==='Да'?'selected':''}>Да</option><option value="Нет" ${mod.dot==='Нет'?'selected':''}>Нет</option></select>
-                <label>Обучение на базе заказчика</label><select id="edit-onsite"><option value="Да" ${mod.onsite==='Да'?'selected':''}>Да</option><option value="Нет" ${mod.onsite==='Нет'?'selected':''}>Нет</option></select>
-                <label>Требования к образованию</label><div class="checkbox-group" id="edit-eduRequirements">${buildCheckboxGroup('eduReq', eduReqOptions, mod.eduRequirements || [])}</div>
-                <label>Продолжительность</label><input type="text" id="edit-duration" value="${mod.duration}">
-                <label>Лекций</label><input type="number" id="edit-lectures" value="${mod.lectures}">
-                <label>Практик</label><input type="number" id="edit-practices" value="${mod.practices}">
-                <label>Часов</label><input type="number" id="edit-hours" value="${mod.hours}">
-                <label>Теория</label><textarea id="edit-theoretical">${mod.theoretical}</textarea>
-                <label>Темы (через запятую)</label><input type="text" id="edit-topics" value="${mod.topics.join(', ')}">
-                <label>Знания (через запятую)</label><input type="text" id="edit-know" value="${mod.know.join(', ')}">
-                <label>Умения (через запятую)</label><input type="text" id="edit-skills" value="${mod.skills.join(', ')}">
-            </div>`;
-        document.getElementById('btn-save-edit').onclick = () => saveModuleChanges(mod.id);
-        document.getElementById('btn-cancel-edit').onclick = () => showModuleDetail(mod.id);
-                updateProfessionDatalist();
+    document.getElementById('edit-form-container').innerHTML = `
+        <div class="edit-form">
+            <label>Название модуля <span style="color:red;">*</span></label>
+            <input type="text" id="edit-title" value="${mod.title}" required placeholder="Например: Основы Python">
+            <label>Краткое описание</label>
+            <input type="text" id="edit-desc" value="${mod.desc}" placeholder="О чём модуль, для кого">
+            <div style="display: flex; gap: 10px;">
+                <div style="flex:1;">
+                    <label>Стоимость (₽)</label>
+                    <input type="number" id="edit-price" value="${mod.price}" min="0" placeholder="0 – бесплатно">
+                </div>
+                <div style="flex:1; display: flex; align-items: center; gap: 8px; margin-top: 22px;">
+                    <label style="margin:0;">Бесплатно?</label>
+                    <select id="edit-free" style="width:auto;">
+                        <option value="true" ${mod.free ? 'selected' : ''}>Да</option>
+                        <option value="false" ${!mod.free ? 'selected' : ''}>Нет</option>
+                    </select>
+                </div>
+            </div>
+            <label>Профессия <span style="color:red;">*</span></label>
+            <input type="text" id="edit-profession" value="${mod.profession}" list="professions-datalist" autocomplete="off" required>
+            <label>Компетенции</label>
+            <input type="text" id="edit-competencies" value="${mod.competencies}" placeholder="Например: Разработка ПО, веб-дизайн">
+            <label>Категории обучающихся</label>
+            <input type="text" id="edit-categories" value="${mod.categories}" placeholder="Студенты, Взрослые, Безработные">
+            <div style="display: flex; gap: 10px;">
+                <div style="flex:1;">
+                    <label>Форма обучения</label>
+                    <select id="edit-form">${buildSelectOptions(forms, mod.form)}</select>
+                </div>
+                <div style="flex:1;">
+                    <label>ОВЗ</label>
+                    <select id="edit-ovz">
+                        <option value="Да" ${mod.ovz === 'Да' ? 'selected' : ''}>Да</option>
+                        <option value="Нет" ${mod.ovz === 'Нет' ? 'selected' : ''}>Нет</option>
+                    </select>
+                </div>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <div style="flex:1;">
+                    <label>Вид образования</label>
+                    <select id="edit-eduType">${buildSelectOptions(eduTypes, mod.eduType || '')}</select>
+                </div>
+                <div style="flex:1;">
+                    <label>Тип программы</label>
+                    <select id="edit-programType">${buildSelectOptions(programTypes, mod.programType || '')}</select>
+                </div>
+            </div>
+            <label>Отрасль</label>
+            <select id="edit-industry">${buildSelectOptions(industries, mod.industry || '')}</select>
+            <div style="display: flex; gap: 10px;">
+                <div style="flex:1;">
+                    <label>Возможность ДОТ</label>
+                    <select id="edit-dot">
+                        <option value="Да" ${mod.dot === 'Да' ? 'selected' : ''}>Да</option>
+                        <option value="Нет" ${mod.dot === 'Нет' ? 'selected' : ''}>Нет</option>
+                    </select>
+                </div>
+                <div style="flex:1;">
+                    <label>Обучение на базе заказчика</label>
+                    <select id="edit-onsite">
+                        <option value="Да" ${mod.onsite === 'Да' ? 'selected' : ''}>Да</option>
+                        <option value="Нет" ${mod.onsite === 'Нет' ? 'selected' : ''}>Нет</option>
+                    </select>
+                </div>
+            </div>
+            <label>Требования к образованию</label>
+            <div class="checkbox-group" id="edit-eduRequirements">${buildCheckboxGroup('eduReq', eduReqOptions, mod.eduRequirements || [])}</div>
+            <label>Продолжительность</label>
+            <input type="text" id="edit-duration" value="${mod.duration}" placeholder="Например: 48 часов">
+            <div style="display: flex; gap: 10px;">
+                <div style="flex:1;">
+                    <label>Лекций</label>
+                    <input type="number" id="edit-lectures" value="${mod.lectures}" min="0">
+                </div>
+                <div style="flex:1;">
+                    <label>Практик</label>
+                    <input type="number" id="edit-practices" value="${mod.practices}" min="0">
+                </div>
+                <div style="flex:1;">
+                    <label>Часов</label>
+                    <input type="number" id="edit-hours" value="${mod.hours}" min="0">
+                </div>
+            </div>
+            <label>Теоретическая часть</label>
+            <textarea id="edit-theoretical" rows="3" placeholder="Что будет изучено в теории">${mod.theoretical}</textarea>
+            <label>Темы (через запятую)</label>
+            <input type="text" id="edit-topics" value="${mod.topics.join(', ')}" placeholder="Тема 1, Тема 2, ...">
+            <label>Знания (через запятую)</label>
+            <input type="text" id="edit-know" value="${mod.know.join(', ')}" placeholder="Что будут знать после обучения">
+            <label>Умения (через запятую)</label>
+            <input type="text" id="edit-skills" value="${mod.skills.join(', ')}" placeholder="Что будут уметь после обучения">
+            <label>Файл модуля (DOCX)</label>
+<input type="file" id="edit-docx-file" accept=".docx,.doc" style="padding: 6px;">
+<p style="font-size:12px; color:#666; margin-top:2px;">${mod.docxBase64 ? 'Файл загружен (измените при необходимости)' : 'Файл не загружен'}</p>
+            <div class="form-actions">
+                <button class="btn-include" id="btn-save-edit">Сохранить изменения</button>
+                <button class="btn-edit-mode" id="btn-cancel-edit">Отмена</button>
+            </div>
+        </div>`;
+
+    // Логика отключения поля стоимости при "Бесплатно"
+    const editFreeSelect = document.getElementById('edit-free');
+    const editPriceInput = document.getElementById('edit-price');
+    function toggleEditPrice() {
+        if (editFreeSelect.value === 'true') {
+            editPriceInput.value = '0';
+            editPriceInput.disabled = true;
+        } else {
+            editPriceInput.disabled = false;
+        }
     }
+    editFreeSelect.addEventListener('change', toggleEditPrice);
+    toggleEditPrice(); // начальное состояние
+
+    document.getElementById('btn-save-edit').onclick = () => saveModuleChanges(mod.id);
+    document.getElementById('btn-cancel-edit').onclick = () => showModuleDetail(mod.id);
+    updateProfessionDatalist();
+}
     async function saveModuleChanges(id) {
         const mod = modules.find(m => m.id === id);
         if (!mod) return;
+        const fileInput = document.getElementById('edit-docx-file');
+if (fileInput && fileInput.files.length > 0) {
+    mod.docxBase64 = await fileToBase64(fileInput.files[0]);
+}
+
         mod.title = document.getElementById('edit-title').value;
         mod.desc = document.getElementById('edit-desc').value;
-        mod.price = parseInt(document.getElementById('edit-price').value) || 0;
+        mod.price = Math.max(0, parseInt(document.getElementById('edit-price').value) || 0);
                 await addProfession(document.getElementById('edit-profession').value);
         mod.profession = document.getElementById('edit-profession').value;
         mod.competencies = document.getElementById('edit-competencies').value;
@@ -1504,9 +1627,9 @@ document.getElementById('btn-edit-mode').style.display = canEdit ? 'inline-block
         mod.onsite = document.getElementById('edit-onsite').value;
         mod.eduRequirements = Array.from(document.querySelectorAll('#edit-eduRequirements input:checked')).map(cb => cb.value);
         mod.duration = document.getElementById('edit-duration').value;
-        mod.lectures = parseInt(document.getElementById('edit-lectures').value) || 0;
-        mod.practices = parseInt(document.getElementById('edit-practices').value) || 0;
-        mod.hours = parseInt(document.getElementById('edit-hours').value) || 0;
+        mod.lectures = Math.max(0, parseInt(document.getElementById('edit-lectures').value) || 0);
+        mod.practices = Math.max(0, parseInt(document.getElementById('edit-practices').value) || 0);
+        mod.hours = Math.max(0, parseInt(document.getElementById('edit-hours').value) || 0);
         mod.theoretical = document.getElementById('edit-theoretical').value;
         mod.topics = document.getElementById('edit-topics').value.split(',').map(s => s.trim());
         mod.know = document.getElementById('edit-know').value.split(',').map(s => s.trim());
@@ -1519,47 +1642,134 @@ document.getElementById('btn-edit-mode').style.display = canEdit ? 'inline-block
     }
 
     function openCreateModuleModal() {
-        document.getElementById('create-module-modal').classList.add('show');
-        const forms = ["Очно","Очно-заочно","Заочно"];
-        const eduTypes = ["ДПО","ПО"];
-        const programTypes = ["Профессиональная подготовка","Повышение квалификации","Профессиональная переподготовка"];
-        const industries = ["Нефтехимия","Машиностроение","Агропромышленный комплекс","Производство пищевых продуктов","Строительство","Сфера услуг","Туризм","Здравоохранение","Образование","Информационные технологии","Творчество и дизайн"];
-        const eduReqOptions = ["basic","secondary","vocational","incomplete_higher","bachelor","master","specialist","dpo","degree","any"];
+    document.getElementById('create-module-modal').classList.add('show');
+    const forms = ["Очно","Очно-заочно","Заочно"];
+    const eduTypes = ["ДПО","ПО"];
+    const programTypes = ["Профессиональная подготовка","Повышение квалификации","Профессиональная переподготовка"];
+    const industries = ["Нефтехимия","Машиностроение","Агропромышленный комплекс","Производство пищевых продуктов","Строительство","Сфера услуг","Туризм","Здравоохранение","Образование","Информационные технологии","Творчество и дизайн"];
+    const eduReqOptions = [
+    { value: "basic", label: "Основное общее" },
+    { value: "secondary", label: "Среднее общее" },
+    { value: "vocational", label: "Среднее профессиональное" },
+    { value: "incomplete_higher", label: "Неоконченное высшее" },
+    { value: "bachelor", label: "Высшее (бакалавриат)" },
+    { value: "master", label: "Высшее (магистратура)" },
+    { value: "specialist", label: "Высшее (специалитет)" },
+    { value: "dpo", label: "Дополнительное профессиональное" },
+    { value: "degree", label: "Ученая степень" },
+    { value: "any", label: "Не имеет значения" }
+];
 
-        document.getElementById('create-module-form').innerHTML = `
-            <div class="edit-form">
-                <label>Название</label><input type="text" id="new-title" required>
-                <label>Описание</label><input type="text" id="new-desc">
-                <label>Стоимость</label><input type="number" id="new-price" value="0">
-                                <label>Профессия</label><input type="text" id="new-profession" list="professions-datalist" placeholder="Выберите или введите свою" autocomplete="off">
-                <label>Компетенции</label><input type="text" id="new-competencies">
-                <label>Категории</label><input type="text" id="new-categories">
-                <label>Форма обучения</label><select id="new-form">${buildSelectOptions(forms, '')}</select>
-                <label>ОВЗ</label><select id="new-ovz"><option>Да</option><option>Нет</option></select>
-                <label>Бесплатно?</label><select id="new-free"><option value="true">Да</option><option value="false" selected>Нет</option></select>
-                <label>Вид образования</label><select id="new-eduType">${buildSelectOptions(eduTypes, '')}</select>
-                <label>Тип программы</label><select id="new-programType">${buildSelectOptions(programTypes, '')}</select>
-                <label>Отрасль</label><select id="new-industry">${buildSelectOptions(industries, '')}</select>
-                <label>Возможность применения ДОТ</label><select id="new-dot"><option>Да</option><option>Нет</option></select>
-                <label>Обучение на базе заказчика</label><select id="new-onsite"><option>Да</option><option>Нет</option></select>
-                <label>Требования к образованию</label><div class="checkbox-group" id="new-eduRequirements">${buildCheckboxGroup('eduReq', eduReqOptions, [])}</div>
-                <label>Продолжительность</label><input type="text" id="new-duration">
-                <label>Лекций</label><input type="number" id="new-lectures" value="0">
-                <label>Практик</label><input type="number" id="new-practices" value="0">
-                <label>Часов</label><input type="number" id="new-hours" value="0">
-                <label>Теория</label><textarea id="new-theoretical"></textarea>
-                <label>Темы (через запятую)</label><input type="text" id="new-topics">
-                <label>Знания (через запятую)</label><input type="text" id="new-know">
-                <label>Умения (через запятую)</label><input type="text" id="new-skills">
-                <div class="form-actions">
-    <button class="btn-include" id="save-new-module">Создать</button>
-    <button class="btn-edit-mode" id="cancel-new-module">Отмена</button>
-</div>
-            </div>`;
-        document.getElementById('save-new-module').addEventListener('click', createNewModule);
-        document.getElementById('cancel-new-module').addEventListener('click', closeCreateModuleModal);
-                updateProfessionDatalist();
+    document.getElementById('create-module-form').innerHTML = `
+        <div class="edit-form">
+            <label>Название модуля <span style="color:red;">*</span></label>
+            <input type="text" id="new-title" required placeholder="Например: Основы Python">
+            <label>Краткое описание</label>
+            <input type="text" id="new-desc" placeholder="О чём модуль, для кого">
+            <div style="display: flex; gap: 10px;">
+                <div style="flex:1;">
+                    <label>Стоимость (₽)</label>
+                    <input type="number" id="new-price" value="0" min="0" placeholder="0 – бесплатно">
+                </div>
+                <div style="flex:1; display: flex; align-items: center; gap: 8px; margin-top: 22px;">
+                    <label style="margin:0;">Бесплатно?</label>
+                    <select id="new-free" style="width:auto;">
+                        <option value="false" selected>Нет</option>
+                        <option value="true">Да</option>
+                    </select>
+                </div>
+            </div>
+            <label>Профессия <span style="color:red;">*</span></label>
+            <input type="text" id="new-profession" list="professions-datalist" placeholder="Выберите или введите свою" autocomplete="off" required>
+            <label>Компетенции</label>
+            <input type="text" id="new-competencies" placeholder="Например: Разработка ПО, веб-дизайн">
+            <label>Категории обучающихся</label>
+            <input type="text" id="new-categories" placeholder="Студенты, Взрослые, Безработные">
+            <div style="display: flex; gap: 10px;">
+                <div style="flex:1;">
+                    <label>Форма обучения</label>
+                    <select id="new-form">${buildSelectOptions(forms, '')}</select>
+                </div>
+                <div style="flex:1;">
+                    <label>ОВЗ</label>
+                    <select id="new-ovz"><option>Да</option><option>Нет</option></select>
+                </div>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <div style="flex:1;">
+                    <label>Вид образования</label>
+                    <select id="new-eduType">${buildSelectOptions(eduTypes, '')}</select>
+                </div>
+                <div style="flex:1;">
+                    <label>Тип программы</label>
+                    <select id="new-programType">${buildSelectOptions(programTypes, '')}</select>
+                </div>
+            </div>
+            <label>Отрасль</label>
+            <select id="new-industry">${buildSelectOptions(industries, '')}</select>
+            <div style="display: flex; gap: 10px;">
+                <div style="flex:1;">
+                    <label>Возможность ДОТ</label>
+                    <select id="new-dot"><option>Да</option><option>Нет</option></select>
+                </div>
+                <div style="flex:1;">
+                    <label>Обучение на базе заказчика</label>
+                    <select id="new-onsite"><option>Да</option><option>Нет</option></select>
+                </div>
+            </div>
+            <label>Требования к образованию</label>
+            <div class="checkbox-group" id="new-eduRequirements">${buildCheckboxGroup('eduReq', eduReqOptions, [])}</div>
+            <label>Продолжительность</label>
+            <input type="text" id="new-duration" placeholder="Например: 48 часов">
+            <div style="display: flex; gap: 10px;">
+                <div style="flex:1;">
+                    <label>Лекций</label>
+                    <input type="number" id="new-lectures" value="0" min="0">
+                </div>
+                <div style="flex:1;">
+                    <label>Практик</label>
+                    <input type="number" id="new-practices" value="0" min="0">
+                </div>
+                <div style="flex:1;">
+                    <label>Часов</label>
+                    <input type="number" id="new-hours" value="0" min="0">
+                </div>
+            </div>
+            <label>Теоретическая часть</label>
+            <textarea id="new-theoretical" rows="3" placeholder="Что будет изучено в теории"></textarea>
+            <label>Темы (через запятую)</label>
+            <input type="text" id="new-topics" placeholder="Тема 1, Тема 2, ...">
+            <label>Знания (через запятую)</label>
+            <input type="text" id="new-know" placeholder="Что будут знать после обучения">
+            <label>Умения (через запятую)</label>
+            <input type="text" id="new-skills" placeholder="Что будут уметь после обучения">
+            <label>Файл модуля (DOCX)</label>
+<input type="file" id="new-docx-file" accept=".docx,.doc" style="padding: 6px;">
+
+            <div class="form-actions">
+                <button class="btn-include" id="save-new-module">Создать модуль</button>
+                <button class="btn-edit-mode" id="cancel-new-module">Отмена</button>
+            </div>
+        </div>`;
+
+    // Логика отключения поля стоимости, если выбрано "Бесплатно"
+    const newFreeSelect = document.getElementById('new-free');
+    const newPriceInput = document.getElementById('new-price');
+    function togglePrice() {
+        if (newFreeSelect.value === 'true') {
+            newPriceInput.value = '0';
+            newPriceInput.disabled = true;
+        } else {
+            newPriceInput.disabled = false;
+        }
     }
+    newFreeSelect.addEventListener('change', togglePrice);
+    togglePrice(); // начальное состояние
+
+    document.getElementById('save-new-module').addEventListener('click', createNewModule);
+    document.getElementById('cancel-new-module').addEventListener('click', closeCreateModuleModal);
+    updateProfessionDatalist();
+}
 
     function closeCreateModuleModal() { document.getElementById('create-module-modal').classList.remove('show'); }
 
@@ -1570,13 +1780,19 @@ document.getElementById('btn-edit-mode').style.display = canEdit ? 'inline-block
         const maxId = modules.length > 0 ? Math.max(...modules.map(m => m.id)) : 0;
         const newId = maxId + 1;
         const role = getCurrentUserRole();
+        let docxBase64 = null;
+const fileInput = document.getElementById('new-docx-file');
+if (fileInput && fileInput.files.length > 0) {
+    docxBase64 = await fileToBase64(fileInput.files[0]);
+}
         const newModule = {
             id: newId,
             title,
             createdBy: currentUser,
+            docxBase64: docxBase64,
             status: (role === 'copp') ? 'approved' : 'pending',
             desc: document.getElementById('new-desc').value,
-            price: parseInt(document.getElementById('new-price').value) || 0,
+            price: Math.max(0, parseInt(document.getElementById('new-price').value) || 0),
             profession: document.getElementById('new-profession').value,
             competencies: document.getElementById('new-competencies').value,
             categories: document.getElementById('new-categories').value,
@@ -1590,9 +1806,9 @@ document.getElementById('btn-edit-mode').style.display = canEdit ? 'inline-block
             onsite: document.getElementById('new-onsite').value,
             eduRequirements: Array.from(document.querySelectorAll('#new-eduRequirements input:checked')).map(cb => cb.value),
             duration: document.getElementById('new-duration').value,
-            lectures: parseInt(document.getElementById('new-lectures').value) || 0,
-            practices: parseInt(document.getElementById('new-practices').value) || 0,
-            hours: parseInt(document.getElementById('new-hours').value) || 0,
+            lectures: Math.max(0, parseInt(document.getElementById('new-lectures').value) || 0),
+practices: Math.max(0, parseInt(document.getElementById('new-practices').value) || 0),
+hours: Math.max(0, parseInt(document.getElementById('new-hours').value) || 0),
             theoretical: document.getElementById('new-theoretical').value,
             topics: document.getElementById('new-topics').value.split(',').map(s => s.trim()),
             know: document.getElementById('new-know').value.split(',').map(s => s.trim()),
@@ -1606,18 +1822,36 @@ document.getElementById('btn-edit-mode').style.display = canEdit ? 'inline-block
         renderPagination();
         alert('Модуль создан');
     }
+    function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+        reader.readAsDataURL(file);
+    });
+}
 function downloadModuleDocx(mod) {
-    // Заглушка – текстовый файл, который Word откроет как .docx
-    const content = `Программа модуля: ${mod.title}\n\nПрофессия: ${mod.profession}\nОписание: ${mod.desc}\n\n(Содержимое будет заменено на реальный документ)`;
-    const blob = new Blob([content], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${mod.title.replace(/[^a-zа-яё0-9]/gi, '_')}.docx`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    if (mod.docxBase64) {
+        // Преобразуем base64 обратно в файл и скачиваем
+        const a = document.createElement('a');
+        a.href = mod.docxBase64;
+        a.download = `${mod.title.replace(/[^a-zа-яё0-9]/gi, '_')}.docx`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    } else {
+        // Заглушка, если файла нет
+        const content = `Программа модуля: ${mod.title}\n\nПрофессия: ${mod.profession}\nОписание: ${mod.desc}\n\n(Файл модуля не загружен)`;
+        const blob = new Blob([content], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${mod.title.replace(/[^a-zа-яё0-9]/gi, '_')}.docx`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
 }
     function initAccessibility() {
         const isActive = localStorage.getItem('accessibilityMode') === 'true';
