@@ -1300,13 +1300,13 @@ if (adminLink) {
         });
 
         document.querySelectorAll('.btn-edit').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.preventDefault();
-                const id = parseInt(btn.dataset.id);
-                showModuleDetail(id);
-                history.pushState(null, '', `?module=${id}`);
-            });
-        });
+    btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const id = parseInt(btn.dataset.id);
+        showModuleDetailForEdit(id);
+        history.pushState(null, '', `?module=${id}`);
+    });
+});
 
                 document.querySelectorAll('.btn-delete').forEach(btn => {
             btn.addEventListener('click', async (e) => {
@@ -1445,6 +1445,13 @@ document.getElementById('btn-edit-mode').style.display = canEdit ? 'inline-block
         document.getElementById('btn-edit-mode').onclick = () => enterEditMode(mod);
                 document.getElementById('btn-download-detail').onclick = () => downloadModuleDocx(mod);
     }
+function showModuleDetailForEdit(id) {
+    showModuleDetail(id);
+    const mod = modules.find(m => m.id === parseInt(id));
+    if (mod) {
+        enterEditMode(mod);
+    }
+}
 
     function buildSelectOptions(options, selectedValue) {
         return options.map(opt => `<option value="${opt}" ${opt === selectedValue ? 'selected' : ''}>${opt}</option>`).join('');
